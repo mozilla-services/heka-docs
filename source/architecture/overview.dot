@@ -49,8 +49,12 @@ digraph overview {
         node [shape=box];
         cassandra [label="Cassandra"];
         nagios [label="Nagios"];
+        graphite [label="Graphite"];
     }
 
-    aggregator -> cassandra;
-    aggregator -> nagios;
+    subgraph {
+        aggregator -> cassandra;
+        aggregator -> nagios;
+        aggregator -> graphite;
+    }
 }
