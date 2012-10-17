@@ -1,0 +1,56 @@
+digraph overview {
+    rankdir=LR;
+    ranksep=equally;
+
+    subgraph {
+        rank=same;
+        node [shape=record];
+        input1 [label="<f0> Python Web App\n(Metlog)|<f1> Log files|<f2> Server Stats"];
+        input2 [label="<f0> Node.js Web App\n(Metlog)|<f1> Log files|<f2> Server Stats"];
+        input3 [label="<f0> Postresql Database|<f1> Server Stats"];
+        input4 [label="<f0> Memcached|<f1> Server Stats"]
+    }
+
+    subgraph {
+        rank=same;
+        node [shape=component, label="Agent Daemon\n(heka-agent)"];
+        agent1 [];
+        agent2 [];
+        agent3 [];
+        agent4 [];
+    }
+
+    subgraph {
+        edge [samehead = "t", arrowsize=0.5];
+        input1:f0 -> agent1;
+        input1:f1 -> agent1;
+        input1:f2 -> agent1;
+
+        input2:f0 -> agent2;
+        input2:f1 -> agent2;
+        input2:f2 -> agent2;
+
+        input3:f0 -> agent3;
+        input3:f1 -> agent3;
+
+        input4:f0 -> agent4;
+        input4:f1 -> agent4;
+    }
+
+    aggregator [shape=Msquare, label="Aggregator / Analyzer\n(heka-grater)"];
+
+    agent1 -> aggregator;
+    agent2 -> aggregator;
+    agent3 -> aggregator;
+    agent4 -> aggregator;
+
+    subgraph {
+        rank=same;
+        node [shape=box];
+        cassandra [label="Cassandra"];
+        nagios [label="Nagios"];
+    }
+
+    aggregator -> cassandra;
+    aggregator -> nagios;
+}

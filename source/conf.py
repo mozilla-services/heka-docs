@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Metlog Documentation documentation build configuration file, created by
+# Heka Documentation documentation build configuration file, created by
 # sphinx-quickstart on Tue Oct 16 14:34:55 2012.
 #
 # This file is execfile()d with the current directory set to its containing dir.
@@ -25,7 +25,10 @@ import sys, os
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx']
+extensions = ['sphinx.ext.autodoc', 'sphinx.ext.intersphinx',
+              'sphinx.ext.graphviz']
+
+graphviz_output_format = 'svg'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -40,7 +43,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Metlog Documentation'
+project = u'Heka Documentation'
 copyright = u'2012, Mozilla'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -164,7 +167,7 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'MetlogDocumentationdoc'
+htmlhelp_basename = 'HekaDocumentationdoc'
 
 
 # -- Options for LaTeX output --------------------------------------------------
@@ -183,7 +186,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'MetlogDocumentation.tex', u'Metlog Documentation Documentation',
+  ('index', 'HekaDocumentation.tex', u'Heka Documentation Documentation',
    u'Mozilla', 'manual'),
 ]
 
@@ -213,7 +216,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'metlogdocumentation', u'Metlog Documentation Documentation',
+    ('index', 'Hekadocumentation', u'Heka Documentation Documentation',
      [u'Mozilla'], 1)
 ]
 
@@ -227,8 +230,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'MetlogDocumentation', u'Metlog Documentation Documentation',
-   u'Mozilla', 'MetlogDocumentation', 'One line description of project.',
+  ('index', 'HekaDocumentation', u'Heka Documentation Documentation',
+   u'Mozilla', 'HekaDocumentation', 'One line description of project.',
    'Miscellaneous'),
 ]
 
