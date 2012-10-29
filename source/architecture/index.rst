@@ -59,6 +59,91 @@ Node.js library for Metlog.
 Heka Applications
 =================
 
+Both the heka-agent and heka-grater applications are generally
+distinguished by their configuration. Internally their architecture is
+similar as they both handle routing messages through a series of
+filters which then are sent to outputs.
+
+This model of message routing is heavily based on and inspired by the
+routing of message in `logstash <http://logstash.net/>`_.
+
+
+.. rubric:: Internal heka architecture
+
+.. digraph:: hekaflow
+
+    rankdir=LR;
+    node [fontsize=12];
+    edge [fontcolor=green];
+
+    subgraph cluster_inputs {
+        label="Inputs";
+        rank=same;
+        color=lightgrey;
+        node [shape=box];
+        input1 [label="UdpStatInput"];
+        input2 [label="UdpInput"];
+    }
+
+    subgraph cluster_decoders {
+        label="Decoders";
+        color=lightgrey;
+        rank=same;
+        decoder1 [label="JsonDecoder"];
+    }
+
+    input2 -> decoder1 [label="Message"];
+
+    subgraph cluster_filters {
+        label="Filters";
+        color=lightgrey;
+        rankdir=LR;
+        filter1 [label="NamedOutputFilter"];
+        filter2 [label="LogFilter"];
+    }
+
+    input1 -> filter2 [label="Message"];
+    decoder1 -> filter2;
+    filter2 -> filter1;
+
+    subgraph cluster_outputs {
+        label="Outputs";
+        color=lightgrey;
+        rank=same;
+        output1 [label="Graphite"];
+        output2 [label="Cassandra"];
+    }
+
+    filter1 -> output1;
+    filter1 -> output2;
+
+Internally, all data sent into the heka applications becomes a message
+which is then sent through a configured series of filters called a
+*filter chain*.
+
+An **input** is responsible for acquiring data. It may listen on a port
+or multiple ports for network traffic, bind to ZeroMQ, or tail log
+files for data. Some inputs require a decoder to translate the raw data
+into a *message*.
+
+A **decoder** may be used if the result from an input is not a message.
+The decoder can then translate the data from the input into a message.
+Some inputs may skip the decoding process.
+
+A **message** may correspond to an event or line of data from a log file
+or a statsd style timer/gauge/counter. Messages are created either by a
+decoder or an input, and contain a set of basic fields as well as an
+arbitrary set of key/values.
+
+A **filter** may mark the outputs a message should be sent to, perform
+side effects (like logging), mutate the message, or destroy the message
+preventing other filters in the chain from being called. Filters are
+applied to a message based on the input in a user configured chain.
+
+An **output** takes a message and usually commits it to a back-end
+service such as a database.
+
+
 heka-agent
 ----------
 
