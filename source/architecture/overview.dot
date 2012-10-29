@@ -1,6 +1,7 @@
 digraph overview {
     rankdir=LR;
     ranksep=equally;
+    node [fontsize=12];
 
     subgraph {
         rank=same;

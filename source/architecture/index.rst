@@ -4,12 +4,12 @@
 Architecture of Heka
 ====================
 
-The big picture:
+.. rubric:: The big picture
 
 .. graphviz:: overview.dot
 
-Metlog
-======
+Client Libraries (Metlog)
+=========================
 
 Metlog (short for Metrics & Logging) is a group of client libraries
 available for multiple languages for reporting application specific
@@ -18,6 +18,9 @@ logging and metrics data. It's capable of collecting:
 - Logging output
 - Custom counters + timers
 - Exceptions
+
+The client libraries send data to an appropriate heka agent/aggregator
+**Input**.
 
 metlog-py
 ---------
@@ -70,52 +73,8 @@ routing of message in `logstash <http://logstash.net/>`_.
 
 .. rubric:: Internal heka architecture
 
-.. digraph:: hekaflow
+.. graphviz:: hekaflow.dot
 
-    rankdir=LR;
-    node [fontsize=12];
-    edge [fontcolor=green];
-
-    subgraph cluster_inputs {
-        label="Inputs";
-        rank=same;
-        color=lightgrey;
-        node [shape=box];
-        input1 [label="UdpStatInput"];
-        input2 [label="UdpInput"];
-    }
-
-    subgraph cluster_decoders {
-        label="Decoders";
-        color=lightgrey;
-        rank=same;
-        decoder1 [label="JsonDecoder"];
-    }
-
-    input2 -> decoder1 [label="Message"];
-
-    subgraph cluster_filters {
-        label="Filters";
-        color=lightgrey;
-        rankdir=LR;
-        filter1 [label="NamedOutputFilter"];
-        filter2 [label="LogFilter"];
-    }
-
-    input1 -> filter2 [label="Message"];
-    decoder1 -> filter2;
-    filter2 -> filter1;
-
-    subgraph cluster_outputs {
-        label="Outputs";
-        color=lightgrey;
-        rank=same;
-        output1 [label="Graphite"];
-        output2 [label="Cassandra"];
-    }
-
-    filter1 -> output1;
-    filter1 -> output2;
 
 Internally, all data sent into the heka applications becomes a message
 which is then sent through a configured series of filters called a
@@ -143,6 +102,9 @@ applied to a message based on the input in a user configured chain.
 An **output** takes a message and usually commits it to a back-end
 service such as a database.
 
+A **chain** refers to a series of filters and outputs that will be used
+for a **message** of a specific type. Multiple chains can be configured
+to handle specific message types.
 
 heka-agent
 ----------

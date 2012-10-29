@@ -1,0 +1,46 @@
+digraph hekaflow {
+    rankdir=LR;
+    node [fontsize=12, shape=box];
+    edge [fontcolor=green];
+
+    subgraph cluster_inputs {
+        label="Inputs";
+        rank=same;
+        color=lightgrey;
+        input1 [label="UdpStatInput"];
+        input2 [label="UdpInput"];
+    }
+
+    subgraph cluster_decoders {
+        label="Decoders";
+        color=lightgrey;
+        rank=same;
+        decoder1 [label="JsonDecoder"];
+    }
+
+    input2 -> decoder1 [label="Message"];
+
+    subgraph cluster_filters {
+        label="Filters";
+        color=lightgrey;
+        rankdir=LR;
+        filter1 [label="NamedOutputFilter"];
+        filter2 [label="LogFilter"];
+    }
+
+    input1 -> filter2 [label="Message"];
+    decoder1 -> filter2;
+    filter2 -> filter1;
+
+    subgraph cluster_outputs {
+        label="Outputs";
+        color=lightgrey;
+        rank=same;
+        output1 [label="Graphite"];
+        output2 [label="Cassandra"];
+    }
+
+    filter1 -> output1;
+    filter1 -> output2;
+
+}
