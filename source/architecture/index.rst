@@ -106,6 +106,20 @@ A **chain** refers to a series of filters and outputs that will be used
 for a **message** of a specific type. Multiple chains can be configured
 to handle specific message types.
 
+When a heka application has a message, a set of filters and outputs
+configured for the message type are loaded based on the heka
+configuration. The filters are then run in order if specficied and can
+specify which of the outputs the message will be sent to (or none of
+them). If no filters are configured for a message type, its sent to
+each of the outputs configured.
+
+Some filters may interact on a back channel with a specialzed input to
+allow a filter to create messages. The `StatRollupFilter` collects
+messages that could be sent to a dedicated statsd machine, and does the
+rollups internally emitting a stat metric message after the flush
+interval. To accomplish this, a `MessageGeneratorInput` is configured
+that will be the source of the newly emitted message.
+
 heka-agent
 ----------
 

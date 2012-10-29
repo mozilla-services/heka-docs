@@ -26,6 +26,13 @@ The data can be used to trigger alerts, analyzed in real-time by the
 aggregators, and fed into systems such as Cassandra for querying, long-
 term trends, monitoring, and alerting.
 
+Getting Started
+===============
+
+Heka is under development at the moment, a good place to get started is
+to read the architecture documentation for a complete idea of how the
+various parts work together.
+
 
 Contents:
 
