@@ -26,6 +26,13 @@ The data can be used to trigger alerts, analyzed in real-time by the
 aggregators, and fed into systems such as Cassandra for querying, long-
 term trends, monitoring, and alerting.
 
+Aspects of Heka overlap with features found in several open-source and
+commercial SaaS offerings such as:
+
+- DataDogHQ
+- ServerDensity
+- New Relic
+
 Getting Started
 ===============
 
@@ -33,6 +40,12 @@ Heka is under development at the moment, a good place to get started is
 to read the architecture documentation for a complete idea of how the
 various parts work together.
 
+The architecture document lays out the big picture and provides links
+to individual components. Detailed API references for client libraries
+is contained in their respective documentation.
+
+Configuration for the core `hekad` daemon and its roles is located
+here.
 
 Contents:
 
@@ -40,3 +53,4 @@ Contents:
    :maxdepth: 2
 
    architecture/index
+   configuration/index

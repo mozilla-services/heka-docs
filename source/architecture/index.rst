@@ -19,8 +19,7 @@ logging and metrics data. It's capable of collecting:
 - Custom counters + timers
 - Exceptions
 
-The client libraries send data to an appropriate heka agent/aggregator
-**Input**.
+The client libraries send data to an appropriate hekad **Input**.
 
 metlog-py
 ---------
@@ -59,26 +58,32 @@ Status: **Development**
 
 Node.js library for Metlog.
 
-Heka Applications
+Hekad Application
 =================
 
-Both the heka-agent and heka-grater applications are generally
-distinguished by their configuration. Internally their architecture is
-similar as they both handle routing messages through a series of
-filters which then are sent to outputs.
+The hekad application daemon is distinguished by the role its
+configured for. Depending on the configuration, hekad's role may be:
+
+- Agent
+- Aggregator
+- Router
+- Analyzer
+
+`hekad` may be configured to act in one or more roles as necessary for
+the environment its deployed in. Regardless of the configured role,
+internally `hekad` works the same, moving messages through a series of
+filters which then are sent to outputs. More information on the roles
+and setting them up can be found in the :ref:`configuration` section.
 
 This model of message routing is heavily based on and inspired by the
 routing of message in `logstash <http://logstash.net/>`_.
-
 
 .. rubric:: Internal heka architecture
 
 .. graphviz:: hekaflow.dot
 
-
-Internally, all data sent into the heka applications becomes a message
-which is then sent through a configured series of filters called a
-*filter chain*.
+Internally, all data sent into `hekad` becomes a message which is then
+sent through a configured series of filters called a *filter chain*.
 
 An **input** is responsible for acquiring data. It may listen on a port
 or multiple ports for network traffic, bind to ZeroMQ, or tail log
@@ -97,59 +102,27 @@ arbitrary set of key/values.
 A **filter** may mark the outputs a message should be sent to, perform
 side effects (like logging), mutate the message, or destroy the message
 preventing other filters in the chain from being called. Filters are
-applied to a message based on the input in a user configured chain.
+applied to a message type based their filter chain configuration.
 
 An **output** takes a message and usually commits it to a back-end
 service such as a database.
 
-A **chain** refers to a series of filters and outputs that will be used
-for a **message** of a specific type. Multiple chains can be configured
-to handle specific message types.
+A **filter chain** refers to a series of filters and outputs that will
+be used for a **message** of a specific type. Multiple chains can be
+configured to handle specific message types.
 
-When a heka application has a message, a set of filters and outputs
-configured for the message type are loaded based on the heka
-configuration. The filters are then run in order if specficied and can
-specify which of the outputs the message will be sent to (or none of
-them). If no filters are configured for a message type, its sent to
-each of the outputs configured.
+When `hekad` has a message, a set of filters and outputs configured for
+the message type are loaded based on the configuration. The filters are
+then run in the order specified and can indicate which of the
+designated outputs the message will be sent to (or none of them). If no
+filters are configured for a message type (or they don't alter the
+output list), its sent to each of the configured outputs.
 
-Some filters may interact on a back channel with a specialzed input to
-allow a filter to create messages. The `StatRollupFilter` collects
-messages that could be sent to a dedicated statsd machine, and does the
-rollups internally emitting a stat metric message after the flush
-interval. To accomplish this, a `MessageGeneratorInput` is configured
-that will be the source of the newly emitted message.
-
-heka-agent
-----------
+hekad
+-----
 
 Code: https://github.com/mozilla-services/heka
 
 Status: **Development**
 
-The heka-agent application is installed on every server that needs to
-report and log information from a variety of sources:
-
-- Log-file data, applying formatters for input lines
-- Statsd counter information
-- Metlog data
-
-The agent runs an embedded statsd that handles counter/timer roll-ups
-with a customizable flush period. The agent processes log-file data
-and sends it to the heka-aggregator.
-
-heka-grater
------------
-
-Code: https://github.com/mozilla-services/heka
-
-Status: **Development**
-
-The heka-grater application can be installed on a single machine
-for smaller clusters, for larger clusters the heka-aggregator should be
-installed on its own machine (or multiple machines depending on the
-amount of data being recorded) with the heka-agents sending their data
-to it.
-
-heka-grater handles filtering the data from the heka-agents and routing
-it to the appropriate end-point (Cassandra, Graphite, Nagios, etc.)
+Configurable daemon that can behave differently based on configuration.
