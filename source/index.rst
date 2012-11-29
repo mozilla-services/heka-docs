@@ -2,9 +2,10 @@
 Heka - Collect, aggregate, and visualize your data
 ==================================================
 
-Heka is the overarching project name for a set of tools that collects
-data from applications, databases and servers; then aggregates them to
-a few systems for monitoring, alerting, and analytics.
+**Heka is** the overarching project name for **a set of tools that
+collects data from applications, databases and servers**; then
+aggregates them to a few systems **for monitoring, alerting, and
+analytics**.
 
 It's made for acquiring data from many sources including:
 
@@ -54,3 +55,14 @@ Contents:
 
    architecture/index
    configuration/index
+
+Source / Support
+================
+
+Heka is an actively developed open-source project being worked on by
+the Mozilla Services team. Contributions are welcome.
+
+Bugs and issues may be `filed on the projects github page
+<https://github.com/mozilla-services/heka-docs/issues>`_.
+
+Source code: https://github.com/mozilla-services/heka-docs
