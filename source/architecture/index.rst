@@ -92,7 +92,9 @@ into a *message*.
 
 A **decoder** may be used if the result from an input is not a message.
 The decoder can then translate the data from the input into a message.
-Some inputs may skip the decoding process.
+Some inputs may skip the decoding process. Hekad uses an internal
+process that determines the appropriate decoder and can have a default
+decoder specified.
 
 A **message** may correspond to an event or line of data from a log file
 or a statsd style timer/gauge/counter. Messages are created either by a

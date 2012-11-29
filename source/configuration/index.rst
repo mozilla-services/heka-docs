@@ -112,7 +112,7 @@ UdpInput
 
 Parameters:
 
-    - Address: An IP address:port string.
+    - Address (string): An IP address:port.
 
 Example:
 
@@ -140,10 +140,21 @@ decoder cannot be determined.
 JsonDecoder
 -----------
 
+Parameters: **None**
+
+Decodes binary messages that were JSON serialized into a hekad message.
+Metlog clients frequently encode their messages as JSON.
 
 
 MsgPackDecoder
 --------------
+
+Parameters: **None**
+
+Decodes binary messsages that were msgpack encoded into a hekad
+message.
+
+.. seealso:: `Msgpack website <http://msgpack.org/>`_
 
 Filters
 =======
@@ -151,8 +162,27 @@ Filters
 LogFilter
 ---------
 
+Parameters: **None**
+
+Logs the message to stdout.
+
 StatRollupFilter
 ----------------
+
+Prerequisites:
+
+    - MessageGeneratorInput must be configured.
+    - Message must be of type `counter`, `gauge`, or `timer`.
+
+Parameters:
+
+    - FlushInterval (int): How often the stats should be rolled up and
+      flushed. Defaults to
+    - PercentThreshold (int): Threshold value for timer outliers to
+      ignore.
+
+A rollup occurs every `FlushInterval` seconds, which then causes
+MessageGeneratorInput to emit a new message of type `statmetric`.
 
 Outputs
 =======
@@ -160,11 +190,34 @@ Outputs
 CounterOutput
 -------------
 
+Parameters: **None**
+
+Prints to stdout a count every second of how many messages were seen.
+Every 10 seconds an aggregate count with an average per second is
+printed to stdout.
+
 FileOutput
 ----------
 
+Parameters:
+
+    - Path (string): Path to the file to write.
+    - Format (string): Output format for the message to be written.
+      Can be either `json` or `text`. Defaults to `text`.
+    - Prefix_ts (bool): Whether a timestamp should be prefixed to each
+      message line in the file. Defaults to false.
+    - Perm (int): File permission for writing. Defaults to `0666`.
+
+Writes a message to the designated file in the format given (including
+a prefixed timestamp if configured).
+
 LogOutput
 ---------
+
+Parameters: **None**
+
+Logs the message to stdout.
+
 
 Chains
 ======
