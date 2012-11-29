@@ -69,8 +69,31 @@ Common Roles
   other `hekad` daemons acting as Agents), rolls up stats, and routes
   messages to appropriate back-ends.
 
-File Format
-===========
+Command Line Options
+====================
+
+--config
+--------
+
+Specifies a configuration file to load. Defaults to `agent.conf` in the
+current directory.
+
+--maxprocs
+----------
+
+Specifies how many processors hekad should use. Best performance is
+usually attained by setting this to 2 x (number of cores). This assumes
+each core is hyper-threaded.
+
+--poolSize
+----------
+
+Size of the message pipeline. This value determines how many messages
+can be 'in-flight' at once in `hekad`. It's default value of `1000` is
+usually sufficient and performs optimally.
+
+Configuration File Format
+=========================
 
 hekad's configuration file is a plain JSON text file that designates
 several keys to configure the various hekad plug-ins:
@@ -218,7 +241,7 @@ Parameters: **None**
 
 Logs the message to stdout.
 
-
 Chains
 ======
+
 
