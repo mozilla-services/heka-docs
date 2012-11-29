@@ -37,7 +37,7 @@ A simple example configuration file:
                 "outputs": ["FileOutput"]
             },
             "sample": {
-                "type": "counter",
+                "message_type": ["Counter", "Timer", "Gauge"],
                 "filters": ["StatRollupFilter"],
                 "outputs": ["CounterOutput"]
             }
@@ -182,13 +182,6 @@ message.
 Filters
 =======
 
-LogFilter
----------
-
-Parameters: **None**
-
-Logs the message to stdout.
-
 StatRollupFilter
 ----------------
 
@@ -200,9 +193,9 @@ Prerequisites:
 Parameters:
 
     - FlushInterval (int): How often the stats should be rolled up and
-      flushed. Defaults to
+      flushed. Defaults to ``10``.
     - PercentThreshold (int): Threshold value for timer outliers to
-      ignore.
+      ignore. Defaults to ``90``.
 
 A rollup occurs every `FlushInterval` seconds, which then causes
 MessageGeneratorInput to emit a new message of type `statmetric`.
@@ -226,10 +219,10 @@ Parameters:
 
     - Path (string): Path to the file to write.
     - Format (string): Output format for the message to be written.
-      Can be either `json` or `text`. Defaults to `text`.
+      Can be either `json` or `text`. Defaults to ``text``.
     - Prefix_ts (bool): Whether a timestamp should be prefixed to each
-      message line in the file. Defaults to false.
-    - Perm (int): File permission for writing. Defaults to `0666`.
+      message line in the file. Defaults to ``false``.
+    - Perm (int): File permission for writing. Defaults to ``0666``.
 
 Writes a message to the designated file in the format given (including
 a prefixed timestamp if configured).
@@ -244,4 +237,46 @@ Logs the message to stdout.
 Chains
 ======
 
+A chain describes the set of filters and outputs to apply to a specific
+message. A default chain must be declared which will be used if no
+other chain matches the message.
 
+The message will be passed to every filter and output named in the
+configuration. Some filters may alter the remaining output list used or
+consume a message entirely which will prevent later filters and outputs
+from seeing it.
+
+.. note::
+
+    At the moment chains can only match a message based on the message
+    type.
+
+Example
+-------
+
+.. code-block:: javascript
+
+    "chains": {
+        "stats": {
+            "message_type": ["Counter", "Timer", "Gauge"],
+            "filters": ["StatRollupFilter"]
+        },
+        "stat_dump": {
+            "message_type": ["StatMetric"],
+            "outputs": ["GraphiteOutput"]
+        },
+        "default": {
+            "outputs": ["LogFileOutput"]
+        }
+    }
+
+The chain named ``default`` will be used in the event a message does
+not match ``StatMetric``, ``Counter``, ``Timer``, or ``Gauge``. Each
+chain may contain two keyed sections: ``filters`` and / or ``outputs``.
+They must be lists that indicate the configured plugin to use, and
+refer to it either by the plugins configured `name` or if the `name`
+for the plugin is omitted, its full `plugin type` (As the above example
+refers to them).
+
+The chain must include the key ``message_type`` to differentiate what
+message types will trigger it unless its the `default` chain.
