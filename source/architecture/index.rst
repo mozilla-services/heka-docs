@@ -75,8 +75,9 @@ internally `hekad` works the same, moving messages through a series of
 filters which then are sent to outputs. More information on the roles
 and setting them up can be found in the :ref:`configuration` section.
 
-This model of message routing is heavily based on and inspired by the
-routing of message in `logstash <http://logstash.net/>`_.
+This model of message routing is inspired by the routing of messages in
+`logstash <http://logstash.net/>`_, although heka introduces an explicit
+decoding step and the idea of filter chains (see below).
 
 .. rubric:: Internal heka architecture
 
