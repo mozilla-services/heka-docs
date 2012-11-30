@@ -101,3 +101,21 @@ initialization.
 
 Inputs
 ======
+
+Input plugins are responsible for injecting messages into the Heka pipeline.
+They might be passively listening for incoming network data, actively scanning
+external sources (either on the local machine or over a network), or even just
+creating messages from nothing based on triggers internal to the `hekad`
+process. The input plugin interface is very simple::
+
+    type Input interface {
+            Plugin
+            Read(pipelinePack *PipelinePack, timeout *time.Duration) error
+    }
+
+That is, in addition to the `Init` method that must be provided by all
+plugins, there is only a single additions `Read` method that accepts a pointer
+to a `PipelinePack` (in which to store the message data) and pointer to a
+`time.Duration` (which specifies how long the read operation should allow to
+elapse before a timeout is considered to have occurred). The only return value
+is an error (or `nil` if the read succeeds).
