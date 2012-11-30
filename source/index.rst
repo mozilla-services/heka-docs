@@ -62,7 +62,12 @@ Source / Support
 Heka is an actively developed open-source project being worked on by
 the Mozilla Services team. Contributions are welcome.
 
-Bugs and issues may be `filed on the projects github page
-<https://github.com/mozilla-services/heka-docs/issues>`_.
+Bugs and issues on the Heka project may be filed on the project's github page
+`issue tracker <https://github.com/mozilla-services/heka/issues>`_. Github is
+also where you can find the Heka `source code <https://github.com/mozilla-
+services/heka>`_.
 
-Source code: https://github.com/mozilla-services/heka-docs
+Bugs and issues related to the Heka documentation that you are now reading can
+be filed on the Heka-Docs project's `issue tracker <https://github.com
+/mozilla-services/heka-docs/issues>`_. The Heka-Docs `source code
+<https://github.com /mozilla-services/heka-docs>`_ is similarly available.
