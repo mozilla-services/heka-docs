@@ -165,5 +165,13 @@ with inputs, the `Decoder` interface is quite simple::
 
 A decoder's `Decode` method should extract the raw message data from
 `pipelinePack.MsgBytes` and attempt to deserialize this and use the contained
-information to construct a Message struct, a pointer to which should be stored
-in `pipelinePack.Message`.
+information to populate the Message struct pointed to by the
+`pipelinePack.Message` attribute. Again, to minimize GC churn, it's a good
+idea to reuse the already allocated memory rather than creating new objects
+and overwriting the existing ones.
+
+If the message bytes are decoded successfully then `pipelinePack.Decoded`
+should be set to `true` and `nil` should be returned. If not, then an
+appropriate error should be returned. The error message will be logged and the
+message will be dropped, no further pipeline processing will occur.
+
