@@ -95,7 +95,8 @@ populated `FileOutputConfig` struct back in to the plugin's `Init` method. The
 
     conf := config.(*FileOutputConfig)
 
-and then it can use the config values to perform the necessary plugin
+and then it can use the config values (i.e. `conf.Path`, `conf.Format`,
+`conf.Prefix_ts`, and `conf.Perm`) to perform the necessary plugin
 initialization.
 
 Inputs
