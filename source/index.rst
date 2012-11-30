@@ -54,6 +54,7 @@ Contents:
    :maxdepth: 2
 
    architecture/index
+   architecture/extending
    configuration/index
 
 Source / Support
