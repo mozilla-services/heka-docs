@@ -31,7 +31,7 @@ With these fundamental concepts in mind, the rest of this document will try to
 provide enough information for Go developers to extend Heka by implementing
 their own custom plugins.
 
-Plugins and config
+Plugins and Config
 ==================
 
 As mentioned above, there are four different types of Heka plugins: inputs,
@@ -119,3 +119,51 @@ to a `PipelinePack` (in which to store the message data) and pointer to a
 `time.Duration` (which specifies how long the read operation should allow to
 elapse before a timeout is considered to have occurred). The only return value
 is an error (or `nil` if the read succeeds).
+
+Note that it is very important that your input plugin honors the specified
+read timeout value by returning an appropriate error if the duration elapses
+before the input can get the requested data. Heka creates a fixed number of
+pipeline goroutines, and if your input's `Read` method does not return, then
+it will be consuming a goroutine and removing it from the pool.
+
+An input plugin that reads successfully can either output raw message bytes or
+a fully decoded `Message` struct object. In the former case, the message bytes
+should be written into the `pipelinePack.MsgBytes` byte slice attribute, and
+the length of the slice should be adjusted to match the actual length of the
+message content. In the latter case, the `pipelinePack.Message` attribute
+points to a `Message` object that should be populated w/ the appropriate
+values, and the `pipelinePack.Decoded` attribute should be set to `true` to
+indicate that further decoding is not required.
+
+In either case, for efficiency's sake, it is important to ensure that you are
+actually writing the data into the memory that has already been allocated by
+the `pipelinePack` struct, rather than creating new objects and then pointing
+the pipelinePack attributes to the new ones. Creating new objects each time
+will end up causing a lot of allocation and garbage collection to occur, which
+will definitely negatively impact Heka performance. A lot of care has been put
+into the Heka pipeline code to reuse allocated memory where possible in order
+to minimize garbage collector performance impact, but a poorly written plugin
+can still cause significant (and unnecessary) slowdowns.
+
+If an input generates raw bytes and wishes to explicitly specify which decoder
+should be used (overriding the specified default), the input can modify the
+`pipelinePack.Decoder` string value. The value chosen here *must* be one of
+the keys of the `pipelinePack.Decoders` map or there will be an error
+condition and the message will not be processed.
+
+Decoders
+========
+
+Decoder plugins are responsible for converting raw bytes containing a message
+into actual `Message` struct objects that the Heka pipeline can process. As
+with inputs, the `Decoder` interface is quite simple::
+
+    type Decoder interface {
+            Plugin
+            Decode(pipelinePack *PipelinePack) error
+    }
+
+A decoder's `Decode` method should extract the raw message data from
+`pipelinePack.MsgBytes` and attempt to deserialize this and use the contained
+information to construct a Message struct, a pointer to which should be stored
+in `pipelinePack.Message`.
