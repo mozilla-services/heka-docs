@@ -114,11 +114,11 @@ process. The input plugin interface is very simple::
     }
 
 That is, in addition to the `Init` method that must be provided by all
-plugins, there is only a single additions `Read` method that accepts a pointer
-to a `PipelinePack` (in which to store the message data) and pointer to a
-`time.Duration` (which specifies how long the read operation should allow to
-elapse before a timeout is considered to have occurred). The only return value
-is an error (or `nil` if the read succeeds).
+plugins, there is only a single additional `Read` method that accepts a
+pointer to a `PipelinePack` (in which to store the message data) and pointer
+to a `time.Duration` (which specifies how much time the read operation should
+allow to pass before a timeout is considered to have occurred). The only
+return value is an error (or `nil` if the read succeeds).
 
 Note that it is very important that your input plugin honors the specified
 read timeout value by returning an appropriate error if the duration elapses
@@ -137,19 +137,21 @@ indicate that further decoding is not required.
 
 In either case, for efficiency's sake, it is important to ensure that you are
 actually writing the data into the memory that has already been allocated by
-the `pipelinePack` struct, rather than creating new objects and then pointing
-the pipelinePack attributes to the new ones. Creating new objects each time
-will end up causing a lot of allocation and garbage collection to occur, which
-will definitely negatively impact Heka performance. A lot of care has been put
-into the Heka pipeline code to reuse allocated memory where possible in order
-to minimize garbage collector performance impact, but a poorly written plugin
-can still cause significant (and unnecessary) slowdowns.
+the `pipelinePack` struct, rather than creating new objects and repointing the
+pipelinePack attributes to the ones you've created. Creating new objects each
+time will end up causing a lot of allocation and garbage collection to occur,
+which will definitely hurt Heka performance. A lot of care has been put into
+the Heka pipeline code to reuse allocated memory where possible in order to
+minimize garbage collector performance impact, but a poorly written plugin can
+undo these efforts and cause significant (and unnecessary) slowdowns.
 
 If an input generates raw bytes and wishes to explicitly specify which decoder
 should be used (overriding the specified default), the input can modify the
 `pipelinePack.Decoder` string value. The value chosen here *must* be one of
 the keys of the `pipelinePack.Decoders` map or there will be an error
-condition and the message will not be processed.
+condition and the message will not be processed. And, obviously, the decoder
+in question must know how to work with the provided message bytes, or the
+decoding will fail, again resulting in the message being lost.
 
 Decoders
 ========
@@ -170,8 +172,9 @@ information to populate the Message struct pointed to by the
 idea to reuse the already allocated memory rather than creating new objects
 and overwriting the existing ones.
 
-If the message bytes are decoded successfully then `pipelinePack.Decoded`
-should be set to `true` and `nil` should be returned. If not, then an
-appropriate error should be returned. The error message will be logged and the
-message will be dropped, no further pipeline processing will occur.
+If the message bytes are decoded successfully then `Decode` should return
+`nil`. If not, then an appropriate error should be returned. The error message
+will be logged and the message will be dropped, no further pipeline processing
+will occur.
+
 
