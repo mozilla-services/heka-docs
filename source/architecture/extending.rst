@@ -177,4 +177,40 @@ If the message bytes are decoded successfully then `Decode` should return
 will be logged and the message will be dropped, no further pipeline processing
 will occur.
 
+Filters
+=======
+
+As with inputs and decoders, the filter plugin interface adds just a single
+method to the default `Plugin` interface shared by all Heka plugins::
+
+    type Filter interface {
+            Plugin
+            FilterMsg(pipelinePack *PipelinePack)
+    }
+
+The `pipelinePack` (which, by the time filters are invoked, should always
+contain a valid decoded Message struct pointed to by `pipelinePack.Message`)
+will be passed by the Heka pipeline engine into the filter plugin, where the
+filter can perform the appropriate task, making any changes to either the
+Message or any other values stored on the pipelinePack to influence further
+processing.
+
+"Appropriate task" is pretty vague, however. What task should a filter be
+performing? Unlike inputs and decoders, the exact function performed
+by a filter plugin is not clearly defined. Filters are where the bulk of
+Heka's message processing takes place and, as such, a filter might be
+performing one of any number of possible jobs:
+
+Filtering
+    As the name suggests, one possible action a filter plugin can take is to
+    block a message from any further processing. This immediately scraps the
+    message, preventing it from being passed to any further filters or to any
+    output plugins. This is accomplished by setting `pipelinePack.Blocked` to
+    `true`.
+
+Output Selection
+    The set of output plugins to which the message will be provided is
+    indicated by the `pipelinePack.OutputNames` map. Any filter can change the
+    set of outputs for a given message by adding or removing keys to or from
+    this set.
 
