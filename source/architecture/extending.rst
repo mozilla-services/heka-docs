@@ -196,9 +196,9 @@ Message or any other values stored on the pipelinePack to influence further
 processing.
 
 "Appropriate task" is pretty vague, however. What task should a filter be
-performing? Unlike inputs and decoders, the exact function performed
-by a filter plugin is not clearly defined. Filters are where the bulk of
-Heka's message processing takes place and, as such, a filter might be
+performing? The exact function performed by a filter plugin is not as specific
+or clearly defined as those of inputs or decoders. Filters are where the bulk
+of Heka's message processing takes place and, as such, a filter might be
 performing one of any number of possible jobs:
 
 Filtering
@@ -214,3 +214,24 @@ Output Selection
     set of outputs for a given message by adding or removing keys to or from
     this set.
 
+Message Injection
+    A filter might possibly watch the pipeline for certain events to happen so
+    that, when triggered, a new message is generated. This can be done by
+    making use of **the TBD message injection API that will be exposed by the
+    `PipelineConfig` object`.
+
+Counting / Aggregation / Roll-ups
+    In some cases you might want to count the number of messages of a
+    particular type that pass through a Heka pipeline. One possible way to
+    handle this is to implement a filter that does the counting. The filter
+    could also perform simple roll-up operations by swallowing the original
+    individual messages and using message injection to generate messages
+    representing the aggregate.
+
+Event / Anomaly Detection
+    A filter might be coded to watch for specific message types or message
+    events such that it notices when expected behavior is not happening. A
+    simple example of this would be if an app generated a heartbeat message at
+    regular intervals, a filter might be expecting these and would then notice
+    if the heartbeats stopped arriving. This can be combined wiht message
+    injection to generate notifications.
