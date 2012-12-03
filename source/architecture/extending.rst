@@ -192,11 +192,11 @@ The `pipelinePack` (which, by the time filters are invoked, should always
 contain a valid decoded Message struct pointed to by `pipelinePack.Message`)
 will be passed by the Heka pipeline engine into the filter plugin, where the
 filter can perform the appropriate task, making any changes to either the
-Message or any other values stored on the pipelinePack to influence further
+Message or to any other values stored on the pipelinePack to influence further
 processing.
 
-"Appropriate task" is pretty vague, however. What task should a filter be
-performing? The exact function performed by a filter plugin is not as specific
+"Appropriate task" is pretty vague, however. What task does a filter perform,
+exactly? The specific function performed by a filter plugin is not as narrowly
 or clearly defined as those of inputs or decoders. Filters are where the bulk
 of Heka's message processing takes place and, as such, a filter might be
 performing one of any number of possible jobs:
