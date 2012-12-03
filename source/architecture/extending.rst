@@ -218,7 +218,7 @@ Message Injection
     A filter might possibly watch the pipeline for certain events to happen so
     that, when triggered, a new message is generated. This can be done by
     making use of **the TBD message injection API that will be exposed by the
-    `PipelineConfig` object`.
+    `PipelineConfig` object`**.
 
 Counting / Aggregation / Roll-ups
     In some cases you might want to count the number of messages of a
