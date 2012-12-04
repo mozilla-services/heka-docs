@@ -217,8 +217,13 @@ Output Selection
 Message Injection
     A filter might possibly watch the pipeline for certain events to happen so
     that, when triggered, a new message is generated. This can be done by
-    making use of **the TBD message injection API that will be exposed by the
-    `PipelineConfig` object`**.
+    making use of `MessageGenerator` API (global to the pipeline package), as
+    in this example::
+
+        msgHolder := MessageGenerator.Retrieve()
+        msgHolder.Message.Type = "yourtype"
+        msgHolder.Message.Payload = "Your message payload"
+        MessageGenerator.Inject(msgHolder)
 
 Counting / Aggregation / Roll-ups
     In some cases you might want to count the number of messages of a
@@ -235,3 +240,20 @@ Event / Anomaly Detection
     regular intervals, a filter might be expecting these and would then notice
     if the heartbeats stopped arriving. This can be combined wiht message
     injection to generate notifications.
+
+Note that this is merely a list of some of the more common uses for Heka
+filter plugins. It is certainly not meant to be a comprehensive list of what
+filters can do. A filter can perform any message processing that you can code.
+
+Outputs
+=======
+
+Finally we come to the output plugins, which are responsible for receiving
+Heka messages and using them to generate interactions with the outside world.
+As with the other plugin types, the `Output` interface is very simple::
+
+    type Output interface {
+            Plugin
+            Deliver(pipelinePack *PipelinePack)
+    }
+
