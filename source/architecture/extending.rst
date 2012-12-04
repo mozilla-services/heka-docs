@@ -257,3 +257,109 @@ As with the other plugin types, the `Output` interface is very simple::
             Deliver(pipelinePack *PipelinePack)
     }
 
+Despite the simplicity of the interface, however, Heka output plugins often
+require a bit more complexity. To understand why, we'll need to understand a
+few more `hekad` implementation details.
+
+During `hekad` initialization, a large pool (default size: 1000) of
+`PipelinePack` structs are created, to be reused throughout the life of the
+process. Each of these pipeline packs contains its own set of output plugins.
+That means that any output plugin structs you define will be instantiated not
+just once but `PoolSize` times.
+
+If your output's `Deliver` method is simply writing the data out using
+`log.Println` or something, then this is no big deal. But if you're writing to
+a file, or over a persistent network connection, this is a problem; you can't
+have 1000 simultaneous open, writable file handle for the same file, and you
+won't want a single `hekad` instance to consume 1000 connections to the same
+server. Instead, you'll want a way for all of the output plugins to share a
+single file handle or network connection.
+
+Heka provides support for sharing such resources among the outputs via the
+`OutputRunner` interface and the `WriteRunner` struct::
+
+    type OutputWriter interface {
+            MakeOutputData() interface{}
+            Write(outputData interface{}) error
+            Stop()
+    }
+
+    type WriteRunner struct {
+            DataChan     chan interface{}
+            RecycleChan  chan interface{}
+            outputWriter OutputWriter
+    }
+
+The `OutputWriter` object is what actually owns the shared resource (i.e. the
+file handle, network connection, etc.). This will be wrapped by a
+`WriteRunner` object which will help transfer data from the plugin to the
+`OutputWriter`, and which will return the used data structures back to the
+plugin for reuse. You start by implementing the `OutputWriter`:
+
+`MakeOutputData`
+    Each `OutputWriter` knows how to handle a specific type of data that is to
+    be sent along to its destination. Many outputs use `[]byte` slices, but
+    sometimes a different data type (such as a pointer to a specific struct)
+    is required. The `OutputWriter` is responsible for creating these objects.
+    `MakeOutputData` should allocate and initialize exactly one data structure
+    and return it so it can be used for message passing.
+
+`Write`
+    The `Write` method performs the actual write. It accepts an `interface{}`
+    argument, but you can then use a type assertion to specify that the object
+    is one of the ones that `MakeOutputData` created. For instance, if
+    `MakeOutputData` looked like this...::
+
+        func (self *MyOutputWriter) MakeOutputData() interface{} {
+                return make([]byte, 0, 2000)
+        }
+
+    ...then you would know that the output data was of type `[]byte` and you
+    could use something like...::
+
+        func (self *MyOutputWriter) Write(outputData interface{}) error {
+                self.outputBytes = outputData.([]byte)
+                ... // write self.outputBytes to destination
+        }
+
+    ...in your `Write` method, returning either `nil` or an error object as
+    appropriate.
+
+`Stop`
+    Finally your `OutputWriter` should implement a `Stop` method that will be
+    called during `hekad` shutdown. This should close any connections and/or
+    tear down any structures to ensure clean shutdown.
+
+The `WriteRunner` implementation is provided by Heka, so after the
+`OutputWriter` you have to construct the output plugin. This should consist of
+a minimum of two methods:
+
+`Init`
+    The `Init` method should, in addition to any other plugin-specific
+    initialization, instantiate **one and only one** `OutputWriter` and
+    `WriteRunner` pair, storing the former within the latter as the
+    `outputWriter` attribute. Then it should store a reference to the
+    `WriteRunner`, or at least to the `DataChan` and `RecycleChan` attributes
+    that are stored within the `WriteRunner`. Note that there should only be a
+    single `OutputWriter`/`WriteRunner` pair for the entire set of plugins, so
+    it is up to the `Init` method to make sure more than one isn't created.
+
+`Deliver`
+
+    An output plugin's `Deliver` method doesn't actually perform the delivery,
+    since that is handled by the `OutputWriter`. Instead it gets an output
+    data object off of the `WriteRunner.RecycleChan` channel, zeroes the data
+    object to make sure no residual data remains from any prior usage,
+    populates it with the appropriate data extracted from the
+    `PipelinePack.Message` object, and then places the data object on the
+    `WriteRunner.DataChan` channel. The `WriteRunner` will pull the output
+    data off of the `DataChan` and will call `self.outputWriter.Write()` to
+    finally perform final delivery.
+
+This is a fair amount to take in all at once, but when it's all put together
+Heka will be able to efficiently share your output connection with all of the
+output plugins in the pipeline. A good example of this pattern in action can
+be found in the `CEF output plugin <https://github.com/mozilla-services/heka-
+mozsvc-plugins/blob/master/outputs.go>`_, which uses a pointer to a
+`SyslogMsg` struct as the data object, a `SyslogOutputWriter` as the output
+writer, and a `CefOutput` as the actual output plugin.
