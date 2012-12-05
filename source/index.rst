@@ -2,10 +2,15 @@
 Heka - Collect, aggregate, and visualize your data
 ==================================================
 
-**Heka is** the overarching project name for **a set of tools that
-collects data from applications, databases and servers**; then
-aggregates them to a few systems **for monitoring, alerting, and
-analytics**.
+***IMPORTANT NOTE:*** **Heka is very new technology, and is not yet released,
+nor is it in production use anywhere, not even by the authors. Developers and
+interested parties are welcome to poke around and get involved, but it is
+neither recommended nor supported for you to be running `hekad` in production
+at this time.**
+
+**Heka is** the overarching project name for **a set of tools that will
+collect data from applications, databases and servers**; then aggregate them
+to a few systems **for monitoring, alerting, and analytics**.
 
 It's made for acquiring data from many sources including:
 
@@ -15,21 +20,22 @@ It's made for acquiring data from many sources including:
 - Various statsd counters
 - Log-files
 
-The data is collected per server node by an agent and then flushed
-at designated intervals to the aggregator which is responsible for
-routing them to the final destination such as:
+The data is collected per server node by an agent and then flushed at
+designated intervals to the aggregator which is responsible for routing them
+to the final destination such as:
 
 - Nagios
 - Graphite
 - Cassandra
 
 The data can be used to trigger alerts, analyzed in real-time by the
-aggregators, and fed into systems such as Cassandra for querying, long-
-term trends, monitoring, and alerting.
+aggregators, and fed into systems such as Cassandra for querying, long-term
+trends, monitoring, and alerting.
 
 Aspects of Heka overlap with features found in several open-source and
 commercial SaaS offerings such as:
 
+- Logstash
 - DataDogHQ
 - ServerDensity
 - New Relic
@@ -63,12 +69,15 @@ Source / Support
 Heka is an actively developed open-source project being worked on by
 the Mozilla Services team. Contributions are welcome.
 
-Bugs and issues on the Heka project may be filed on the project's github page
-`issue tracker <https://github.com/mozilla-services/heka/issues>`_. Github is
-also where you can find the Heka `source code <https://github.com/mozilla-
-services/heka>`_.
+* Heka project `github page <https://github.com/mozilla-services/heka>`_
+* Heka project
+  `issue tracker <https://github.com/mozilla-services/heka/issues>`_
 
-Bugs and issues related to the Heka documentation that you are now reading can
-be filed on the Heka-Docs project's `issue tracker <https://github.com
-/mozilla-services/heka-docs/issues>`_. The Heka-Docs `source code
-<https://github.com /mozilla-services/heka-docs>`_ is similarly available.
+* Heka documentation project
+  `source code <https://github.com /mozilla-services/heka-docs>`_
+* Heka documentation project
+  `issue tracker <https://github.com/mozilla-services/heka-docs/issues>`_
+
+Heka developers can be reached via the `services-dev
+<https://mail.mozilla.org/listinfo/services-dev>`_ mailing list or via IRC on
+the #heka channel of irc.mozilla.org.
