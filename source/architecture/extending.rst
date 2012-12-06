@@ -308,34 +308,54 @@ structures back to the plugins for reuse. You start by implementing the
     and return it so it can be used for message passing.
 
 `Write`
-    The `Write` method performs the actual write. It accepts an `interface{}`
-    argument, to which you should apply a type assertion to ensure that you
-    are in fact holding an object of the type that `MakeOutputData` created.
-    For instance, if `MakeOutputData` looked like this...::
+    The `Write` method performs the actual write. It should perform the following
+    steps:
 
-        func (self *MyOutputWriter) MakeOutputData() interface{} {
-                return make([]byte, 0, 2000)
-        }
-
-    ...then you would know that the output data was of type `[]byte` and you
-    could use something like...::
-
-        func (self *MyOutputWriter) Write(outputData interface{}) error {
-                self.outputBytes = outputData.([]byte)
-                ... // write self.outputBytes to destination
-        }
-
-    ...in your `Write` method, returning either `nil` or an error object as
-    appropriate.
+    * Apply a type assertion to the passed `interface{}` argument to verify
+      that you have indeed been passed an output data object of the same type
+      as those created by `MakeOutputData`.
+    * Extract information as needed from output data object and perform actual
+      write operation.
+    * Zero the output data object, if necessary.
+    * Return either an appropriate error code or nil if the write was
+      successful.
 
 `Stop`
     Finally your `OutputWriter` should implement a `Stop` method that will be
     called during `hekad` shutdown. This should close any connections and/or
     tear down any structures to ensure clean shutdown.
 
+To put this together, imagine you want to have a `NetworkOutputWriter` struct.
+This simple `OutputWriter` will use a byte slice to hold the output data, and
+it will write this data out using a connection object supporting the
+`net.Conn` interface. An implementation might be as follows::
+
+        type NetworkOutputWriter struct {
+                outputBytes []byte
+                conn        *net.Conn
+        }
+
+        func (self *NetworkOutputWriter) MakeOutputData() interface{} {
+                return make([]byte, 0, 2000)
+        }
+
+        func (self *NetworkOutputWriter) Write(outputData interface{}) error {
+                self.outputBytes = outputData.([]byte)
+                n, err := self.conn.Write(self.outputBytes)
+                if err == nil && n < len(self.outputBytes) {
+                    err = errors.New("MyOutputWriter message truncated.")
+                }
+                self.outputBytes = self.outputBytes[:0] // zero for reuse
+                return err
+        }
+
+        func (self *NetworkOutputWriter) Stop() {
+                self.conn.Close()
+        }
+
 The `WriteRunner` implementation is provided by Heka, so after the
-`OutputWriter` you have to construct the output plugin. As per the `Output`
-interface, this consists of a minimum of two methods:
+`OutputWriter` is built you just have to construct the output plugin. As per
+the `Output` interface, this consists of a minimum of two methods:
 
 `Init`
     The `Init` method should, in addition to any other plugin-specific
@@ -360,8 +380,6 @@ interface, this consists of a minimum of two methods:
 
     * Fetch an output data object off of the `WriteRunner.RecycleChan`
       channel.
-    * Zero the data object to make sure no residual data remains from any prior
-      usage.
     * Populate the data object with the appropriate data extracted from the
       provided `PipelinePack.Message` object.
     * Place the data object on the `WriteRunner.DataChan` channel.
