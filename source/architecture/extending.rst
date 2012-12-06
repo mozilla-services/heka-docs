@@ -330,28 +330,28 @@ This simple `OutputWriter` will use a byte slice to hold the output data, and
 it will write this data out using a connection object supporting the
 `net.Conn` interface. An implementation might be as follows::
 
-        type NetworkOutputWriter struct {
-                outputBytes []byte
-                conn        *net.Conn
-        }
+    type NetworkOutputWriter struct {
+            outputBytes []byte
+            conn        *net.Conn
+    }
 
-        func (self *NetworkOutputWriter) MakeOutputData() interface{} {
-                return make([]byte, 0, 2000)
-        }
+    func (self *NetworkOutputWriter) MakeOutputData() interface{} {
+            return make([]byte, 0, 2000)
+    }
 
-        func (self *NetworkOutputWriter) Write(outputData interface{}) error {
-                self.outputBytes = outputData.([]byte)
-                n, err := self.conn.Write(self.outputBytes)
-                if err == nil && n < len(self.outputBytes) {
-                    err = errors.New("MyOutputWriter message truncated.")
-                }
-                self.outputBytes = self.outputBytes[:0] // zero for reuse
-                return err
-        }
+    func (self *NetworkOutputWriter) Write(outputData interface{}) error {
+            self.outputBytes = outputData.([]byte)
+            n, err := self.conn.Write(self.outputBytes)
+            if err == nil && n < len(self.outputBytes) {
+                err = errors.New("MyOutputWriter message truncated.")
+            }
+            self.outputBytes = self.outputBytes[:0] // zero for reuse
+            return err
+    }
 
-        func (self *NetworkOutputWriter) Stop() {
-                self.conn.Close()
-        }
+    func (self *NetworkOutputWriter) Stop() {
+            self.conn.Close()
+    }
 
 The `WriteRunner` implementation is provided by Heka, so after the
 `OutputWriter` is built you just have to construct the output plugin. As per
@@ -384,13 +384,56 @@ the `Output` interface, this consists of a minimum of two methods:
       provided `PipelinePack.Message` object.
     * Place the data object on the `WriteRunner.DataChan` channel.
 
-The `WriteRunner` takes over at this point, pulling data off of the
-`DataChan`, passing it to the `OutputWriter.Write` method, and freeing data
-objects up by putting them back on the `RecycleChan` for reuse after delivery
-has occurred.
+To continue from the example above, a matching `NetworkOutput` plugin might
+be implemented as follows::
 
-A good example of an output plugin making use of this system can be found in
-the `CEF output plugin <https://github.com/mozilla-services/heka- mozsvc-
+    // Used to make sure we only have one WriteRunner/NetworkOutputWriter
+    // pair for each URL.
+    var NetworkWriteRunners map[string]*pipeline.WriteRunner
+
+    type NetworkOutputConfig struct {
+            URL string
+    }
+
+    type NetworkOutput struct {
+            writeRunner *pipeline.WriteRunner
+            outBytes    []byte
+    }
+
+    func (self *NetworkOutput) ConfigStruct() interface{} {
+            return new(NetworkOutputConfig)
+    }
+
+    func (self *NetworkOutput) Init(config interface{}) error {
+            conf := config.(*NetworkOutputConfig)
+            // Outputs are created serially so we don't need to mutex the map
+            // access.
+            self.writeRunner, ok = NetworkWriteRunners[conf.URL]
+            if !ok {
+                    conn, err := SomeNetConnObjectFactory(conf.URL)
+                    if err != nil {
+                        return err
+                    }
+                    writer := &NetworkOutputWriter{conn: conn}
+                    self.writeRunner = pipeline.NewWriteRunner(writer)
+                    NetworkWriteRunners[conf.URL] = self.writeRunner
+            }
+       return nil
+    }
+
+    func (self *NetworkOutput) Deliver(pack *pipeline.PipelinePack) {
+            self.outBytes = (<-self.writeRunner.RecycleChan).([]byte)
+            self.outBytes = append(self.outBytes, []byte(pack.Message.Payload)...)
+            self.writeRunner.DataChan <- self.outBytes
+    }
+
+Once the `Deliver` method has put the output data on the `DataChan` channel,
+the `WriteRunner` takes over. It pulls the data off of `DataChan`, passes it
+to the `OutputWriter.Write` method, and then puts the zeroed output data
+object back on the `RecycleChan` for reuse.
+
+A good example of a full, working output plugin using this system can be found
+in the `CEF output plugin <https://github.com/mozilla-services/heka-mozsvc-
 plugins/blob/master/outputs.go>`_. This uses a pointer to a `SyslogMsg` struct
 as the data object, a `SyslogOutputWriter` as the output writer, and a
 `CefOutput` as the actual output plugin.
