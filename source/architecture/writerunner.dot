@@ -1,0 +1,39 @@
+digraph writerunner {
+    rankdir=LR;
+    node [fontsize=12, shape=box];
+    edge [fontcolor=green];
+
+    subgraph cluster_outputs {
+        label="Output Pool";
+        color=lightgrey;
+        output1 [label="Output"];
+        output2 [label="Output"];
+        output3 [label="Output"];
+        output4 [label="Output"];
+        output5 [label="Output"];
+    }
+
+    subgraph cluster_writerunner {
+        label="WriteRunner";
+        sendoutputdata [shape=oval,label="SendOutputData"];
+        retrievedataobject [shape=oval,label="RetrieveDataObject"];
+        outputwriter [label="OutputWriter"];
+    }
+
+    destination [shape=tripleoctagon,label="Output Destination"]
+
+    retrievedataobject -> output1;
+    retrievedataobject -> output2;
+    retrievedataobject -> output3;
+    retrievedataobject -> output4;
+    retrievedataobject -> output5;
+
+    output1 -> sendoutputdata;
+    output2 -> sendoutputdata;
+    output3 -> sendoutputdata;
+    output4 -> sendoutputdata;
+    output5 -> sendoutputdata;
+
+    sendoutputdata -> outputwriter;
+    outputwriter -> destination
+}
