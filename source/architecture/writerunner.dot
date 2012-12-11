@@ -14,26 +14,24 @@ digraph writerunner {
     }
 
     subgraph cluster_writerunner {
-        label="WriteRunner";
-        sendoutputdata [shape=oval,label="SendOutputData"];
-        retrievedataobject [shape=oval,label="RetrieveDataObject"];
-        outputwriter [label="OutputWriter"];
+        label="WriteRunner"
+        node [shape=record];
+        writerunner [label="{<retrieve> RetrieveDataObject|<send> SendOutputData}|<writer> OutputWriter"]
     }
 
-    destination [shape=tripleoctagon,label="Output Destination"]
+    destination [shape=tripleoctagon,label="Output Destination\n(file, network connection, etc.)"]
 
-    retrievedataobject -> output1;
-    retrievedataobject -> output2;
-    retrievedataobject -> output3;
-    retrievedataobject -> output4;
-    retrievedataobject -> output5;
+    writerunner:retrieve -> output1 [color=green];
+    writerunner:retrieve -> output2 [color=green];
+    writerunner:retrieve -> output3 [color=green];
+    writerunner:retrieve -> output4 [color=green];
+    writerunner:retrieve -> output5 [color=green];
 
-    output1 -> sendoutputdata;
-    output2 -> sendoutputdata;
-    output3 -> sendoutputdata;
-    output4 -> sendoutputdata;
-    output5 -> sendoutputdata;
+    output1 -> writerunner:send [color=blue,fontcolor=blue];
+    output2 -> writerunner:send [color=blue,fontcolor=blue];
+    output3 -> writerunner:send [color=blue,fontcolor=blue];
+    output4 -> writerunner:send [color=blue,fontcolor=blue];
+    output5 -> writerunner:send [color=blue,fontcolor=blue];
 
-    sendoutputdata -> outputwriter;
-    outputwriter -> destination
+    writerunner:writer -> destination
 }
