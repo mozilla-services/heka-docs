@@ -8,9 +8,9 @@ interested parties are welcome to poke around and get involved, but it is
 neither recommended nor supported for you to be running `hekad` in production
 at this time.**
 
-**Heka is** the overarching project name for **a set of tools that will
-collect data from applications, databases and servers**; then aggregate them
-to a few systems **for monitoring, alerting, and analytics**.
+**Heka** is a **set of tools that will collect data from applications,
+databases and servers**; then aggregate them to a few systems **for
+monitoring, alerting, and analytics**.
 
 It's made for acquiring data from many sources including:
 
@@ -43,16 +43,12 @@ commercial SaaS offerings such as:
 Getting Started
 ===============
 
-Heka is under development at the moment, a good place to get started is
-to read the architecture documentation for a complete idea of how the
-various parts work together.
-
-The architecture document lays out the big picture and provides links
-to individual components. Detailed API references for client libraries
-is contained in their respective documentation.
-
-Configuration for the core `hekad` daemon and its roles is located
-here.
+Heka is under development at the moment. Currently the only component that is
+close to ready is `hekad`, the message processing pipeline that serves as both
+the agent and the aggregator, depending on configuration. A good place to get
+started is to read the architecture documentation, which lays out the big
+picture and provides links to individual components, as well as details
+regarding `hekad` configuration.
 
 Contents:
 
