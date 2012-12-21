@@ -300,8 +300,12 @@ there are three related pieces:
     provides a `WriteRunner` implementation that uses channels for this
     purpose.
 
-More details are of course in order. It is easiest to start with looking at
-the `OutputWriter` interface::
+.. rubric:: Output plugin / WriteRunner / OutputWriter
+
+.. graphviz:: writerunner.dot
+
+Drilling down a bit more, it is probably easiest to start with looking at the
+`OutputWriter` interface::
 
     type OutputWriter interface {
             MakeOutputData() interface{}
@@ -357,10 +361,6 @@ Your output plugin's `Deliver` method, then, should call the `WriterRunner`s
 `RetrieveDataObject` method to get a data object into which the output data
 can be placed. This data object should be populated and then passed in to
 `WriteRunner.SendOutputData`.
-
-.. rubric:: Output plugin / WriteRunner / OutputWriter
-
-.. graphviz:: writerunner.dot
 
 Output Example
 ==============
