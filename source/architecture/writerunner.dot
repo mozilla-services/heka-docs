@@ -6,6 +6,7 @@ digraph writerunner {
     subgraph cluster_outputs {
         label="Output Pool";
         color=lightgrey;
+        fontcolor=grey;
         output1 [label="Output"];
         output2 [label="Output"];
         output3 [label="Output"];
@@ -14,12 +15,12 @@ digraph writerunner {
     }
 
     subgraph cluster_writerunner {
-        label="WriteRunner"
+        label="WriteRunner";
         node [shape=record];
-        writerunner [label="{<retrieve> RetrieveDataObject|<send> SendOutputData}|<writer> OutputWriter"]
+        writerunner [label="{<retrieve> RetrieveDataObject|<send> SendOutputData}|<writer> OutputWriter"];
     }
 
-    destination [shape=tripleoctagon,label="Output Destination\n(file, network connection, etc.)"]
+    destination [shape=tripleoctagon,label="Output Destination\n(file, network connection, etc.)"];
 
     writerunner:retrieve -> output1 [color=green];
     writerunner:retrieve -> output2 [color=green];
@@ -27,11 +28,11 @@ digraph writerunner {
     writerunner:retrieve -> output4 [color=green];
     writerunner:retrieve -> output5 [color=green];
 
-    output1 -> writerunner:send [color=blue,fontcolor=blue];
-    output2 -> writerunner:send [color=blue,fontcolor=blue];
-    output3 -> writerunner:send [color=blue,fontcolor=blue];
-    output4 -> writerunner:send [color=blue,fontcolor=blue];
-    output5 -> writerunner:send [color=blue,fontcolor=blue];
+    output1 -> writerunner:send [color=blue];
+    output2 -> writerunner:send [color=blue];
+    output3 -> writerunner:send [color=blue];
+    output4 -> writerunner:send [color=blue];
+    output5 -> writerunner:send [color=blue];
 
-    writerunner:writer -> destination
+    writerunner:writer -> destination;
 }
