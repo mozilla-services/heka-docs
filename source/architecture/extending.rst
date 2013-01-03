@@ -313,7 +313,8 @@ Note that it is very important that your input plugin honors the specified
 read timeout value by returning an appropriate error if the duration elapses
 before the input can get the requested data. Heka creates a fixed number of
 pipeline goroutines, and if your input's `Read` method never returns, then it
-will be tying up one of these goroutines, effectively removing it from the pool.
+will be tying up one of these goroutines, effectively removing it from the
+pool.
 
 An input plugin that reads successfully can either output raw message bytes or
 a fully decoded `Message` struct object. In the former case, the message bytes
@@ -327,10 +328,10 @@ actually writing the data into the memory that has already been allocated by
 the `pipelinePack` struct, rather than creating new objects and repointing the
 `pipelinePack` attributes to the ones you've created. Creating new objects
 each time will end up causing a lot of allocation and garbage collection to
-occur, which will definitely hurt Heka performance. A lot of care has been put
-into the Heka pipeline code to reuse allocated memory where possible in order
-to minimize garbage collector performance impact, but a poorly written plugin
-can undo these efforts and cause significant (and unnecessary) slowdowns.
+occur, which will hurt Heka performance. A lot of care has been put into the
+Heka pipeline code to reuse allocated memory where possible in order to
+minimize garbage collector performance impact, but a poorly written plugin can
+undo these efforts and cause significant (and unnecessary) slowdowns.
 
 If an input generates raw bytes and wishes to explicitly specify which decoder
 should be used (overriding the specified default), the input can modify the
@@ -398,10 +399,10 @@ Filtering
     `true`.
 
 Output Selection
-    The set of output plugins to which the message will be provided is
-    indicated by the `pipelinePack.OutputNames` map. Any filter can change the
-    set of outputs for a given message by adding or removing keys to or from
-    this set.
+    The set of output plugins to which the message will be passed is indicated
+    by the `pipelinePack.OutputNames` map. Any filter can change the set of
+    outputs for a given message by adding or removing keys to or from this
+    set.
 
 Message Injection
     A filter might possibly watch the pipeline for certain events to happen so
@@ -423,12 +424,12 @@ Counting / Aggregation / Roll-ups
     representing the aggregate.
 
 Event / Anomaly Detection
-    A filter might be coded to watch for specific message types or message
-    events such that it notices when expected behavior is not happening. A
-    simple example of this would be if an app generated a heartbeat message at
-    regular intervals, a filter might be expecting these and would then notice
-    if the heartbeats stopped arriving. This can be combined with message
-    injection to generate notifications.
+    A filter might be coded to watch for certain message types or message
+    events such that it notices when specific behavior is (or isn't)
+    happening. A simple example of this would be if an app generated a
+    heartbeat message at regular intervals, a filter might be expecting these
+    and would then notice if the heartbeats stopped arriving. This can be
+    combined with message injection to generate notifications.
 
 Note that this is merely a list of some of the more common uses for Heka
 filter plugins. It is certainly not meant to be a comprehensive list of what
@@ -469,12 +470,12 @@ called the `Runner` plugin to do this for you.
 Runner Plugin
 =============
 
-The `Runner` plugin is a special plugin that Heka provides that efficiently
-manages writing to a shared connection. To make use of the `Runner` plugin you
-must provide a `Writer` object that knows how to prepare data for output and
-to perform the actual write operation, or a `BatchWriter` if you want to queue
-up output and send it out in batches. `Writer` and `BatchWriter` are defined
-(in `runner_plugin.go <https://github.com /mozilla-
+The `Runner` plugin is a special plugin Heka provides that efficiently manages
+writing to a shared connection. To make use of the `Runner` plugin you must
+provide a `Writer` object that knows how to prepare data for output and to
+perform the actual write operation, or a `BatchWriter` if you want to queue up
+output and send it out in batches. `Writer` and `BatchWriter` are defined (in
+`runner_plugin.go <https://github.com /mozilla-
 services/heka/blob/dev/pipeline/runner_plugin.go>`_) as follows::
 
     type Writer interface {
@@ -565,10 +566,11 @@ PrepOutData(pack *PipelinePack, outData interface{}, timeout *time.Duration) err
     using the `Runner` plugin as an input.)
 
 It is important to realize that all of the `DataRecycler` methods will be
-simultaneously in use by the entire pool of Heka pipelines, to they must be
-reentrant. `ZeroOutData` and `PrepOutData` can (and should) modify the passed
-`outData` pointer object, but they should **not** try to assume ownership of
-writer attributes or any other resource that may be in contention.
+simultaneously in use by the entire pool of Heka pipelines, so they must be
+thread-safe. `ZeroOutData` and `PrepOutData` can (and should) modify the
+passed `outData` pointer object, but they should **not** try to assume
+ownership of writer attributes or any other resource that is also available
+to other goroutines.
 
 .. _writer_interface:
 
@@ -580,7 +582,7 @@ objects, we can get to the task of actually writing to the output by providing
 a `Writer` implementation:
 
 Init(config interface{}) error
-    This is a setup method, that will be called exactly once. This is wired up
+    This is a setup method that will be called exactly once. This is wired up
     to Heka's config system, and any configuration values specified for this
     particular `Runner` plugin will be passed along to the `Writer`. As with
     plugins, `config` will be of type `PluginConfig` (i.e.
@@ -597,7 +599,6 @@ Write(outData interface{}) error
     repeatedly, but for a given `Writer` instance it will only ever be called
     from a single goroutine, so it is safe to make use of any shared resource
     without needing to worry about contention or locks.
-
 
 .. _batchwriter_interface:
 
@@ -621,7 +622,7 @@ Batch(outData interface{}) error
     The `Batch` method will be called for each message that is to be
     delivered, and works much like the `Write` method above in that it a) will
     be passed a populated `outData` object and b) will only be called from one
-    goroutine at a time. Unlike `Write`, however, `Batch` doesn't actually
+    goroutine at a time. Unlike `Write`, however, `Batch` should not actually
     send data out over the wire. Instead, it should place the data into a
     buffer of some sort for holding until the next tick triggers a write
     operation.
@@ -639,31 +640,35 @@ BatchWriter Example
 ===================
 
 To put this together, let's reconsider the `UdpOutput` we were working on
-above, where we want tp write a message's payload out over a UDP connection.
+above, where we want to write a message's payload out over a UDP connection.
 Only we'll extend this to accumulate messages in batches and only actually
 send a batch out once every second.
 
-All we need is a `UdpBatchWriter` implementation::
+All we need is a `UdpBatchWriter` implementation and a corresponding
+`UdpBatchWriterConfig` struct to hold the configuration data::
+
+    type UdpBatchWriterConfig struct {
+            Address string
+    }
 
     type UdpBatchWriter struct {
             conn net.Conn
             batchBuffer []*[]byte
     }
 
-    type UdpBatchWriterConfig struct {
-            Address string
-    }
-
+    // Provides pipeline.HasConfigStruct interface
     func (self *UdpBatchWriter) ConfigStruct interface{} {
             return &UdpBatchWriterConfig{"my.example.com:44444"}
     }
 
+    // Provides pipeline.PluginGlobal interface
     func (self *UdpBatchWriter) Event(eventType string) {
             if eventType == pipeline.STOP {
                     self.conn.Close()
             }
     }
 
+    // Sets up UDP connection, buffer for accumulating output data, and commit ticker
     func (self *UdpBatchWriter) Init(config interface{}) (<-chan time.Time, error) {
             conf := config.(*UdpBatchWriterConfig)
             udpAddr, err := net.ResolveUdpAddr("udp", conf.Address)
@@ -680,16 +685,19 @@ All we need is a `UdpBatchWriter` implementation::
             return time.Tick(time.Second), nil
     }
 
+    // Creates a byte slice for holding output data
     func (self *UdpBatchWriter) MakeOutData() interface{} {
             b := make([]byte, 0, 1000)
             return &b
     }
 
+    // Resets a byte slice to zero length for reuse
     func (self *UdpBatchWriter) ZeroOutData(outData interface{}) {
             outBytesPtr := outData.(*[]byte)
             *outBytesPtr = *outBytesPtr[:0]
     }
 
+    // Writes message payload into provided outData byte slice
     func (self *UdpBatchWriter) PrepOutData(pack *pipeline.PipelinePack, outData interface{},
             timeout *time.Duration) error {
             outBytesPtr := outData.(*[]byte)
@@ -697,12 +705,15 @@ All we need is a `UdpBatchWriter` implementation::
             return nil
     }
 
+    // Adds this particular outData byte slice into the output buffer
     func (self *UdpBatchWriter) Batch(outData interface{}) error {
             outBytesPtr := outData(*[]byte)
             self.batchBuffer = append(self.batchBuffer, outBytesPtr)
             return nil
     }
 
+    // Extract all of the outgoing message contents from the output buffer, separate
+    // them by newlines, and write the result out over the UDP connection
     func (self *UdpBatchWriter) Commit() error {
             fullBatch := make([]byte, 0, 2000)
             for _, outBytesPtr := range(self.batchBuffer) {
