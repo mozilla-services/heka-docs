@@ -5,11 +5,11 @@ Extending Heka
 ==============
 
 The core of the Heka engine is written in the `Go <http://golang.org>`_
-programming language. Heka supports a plugin system, and plugins are also
-written in Go. This document will try to provide enough information for
-developers to extend Heka by implementing their own custom plugins. It assumes
-a small amount of familiarity with Go, although any reasonably experienced
-programmer will probably be able to follow along with no trouble.
+programming language. Heka supports plugins, which are also written in Go.
+This document will try to provide enough information for developers to extend
+Heka by implementing their own custom plugins. It assumes a small amount of
+familiarity with Go, although any reasonably experienced programmer will
+probably be able to follow along with no trouble.
 
 .. _extending_definitions:
 
@@ -39,9 +39,9 @@ Pipeline
     simultaneously, each running in its own goroutine.
 
 PoolSize
-   `PoolSize` is a Heka configuration setting which specifies the number of
-   pipelines that can be concurrently processed in a running Heka server.
-   (default: 1000)
+   `PoolSize` is a Heka configuration setting which specifies the maximum
+   number of pipelines allowed to be concurrently processed in a running Heka
+   server. (default: 1000)
 
 PipelinePack
     In addition to the core message data, Heka needs to track some related
@@ -49,8 +49,8 @@ PipelinePack
     a `PipelinePack` struct defined in the `heka/pipeline` package's
     `pipeline_runner.go <https://github.com/mozilla-
     services/heka/tree/dev/pipeline/pipeline_runner.go>`_ file. `PipelinePack`
-    objects are what get passed in to the various Heka plugins in a pipeline
-    as the message flows through.
+    objects are what get passed in to the various Heka plugins as messages
+    flow through the pipelines.
 
 PluginWithGlobal / PluginGlobal
     When Heka starts up, `PoolSize` copies of each decoder, filter, and output
@@ -73,7 +73,8 @@ Plugin Configuration
 
 Heka uses JSON as its configuration file format (see: :ref:`configuration`),
 and provides a simple mechanism through which plugins can integrate with the
-system to initialize themselves based on settings in the config file.
+configuration loading system to initialize themselves from settings in the
+config file.
 
 The minimal shared interface that a Heka plugin must implement in order to use
 the config system is (surprise, surprise) `Plugin`, defined in
@@ -84,9 +85,9 @@ services/heka/blob/dev/pipeline/pipeline_runner.go>`_::
             Init(config interface{}) error
     }
 
-During Heka initialization a pool of instances is created of every plugin
-listed in the configuration file. The JSON configuration for that plugin will
-be parsed and the result will be passed in to the `Init` method of each
+During Heka initialization a pool of instances of every plugin listed in the
+configuration file will be created. The JSON configuration for each plugin
+will be parsed and the result will be passed in to the `Init` method of each
 instance as the `config` argument. This argument is specified as type
 `interface{}`, but by default the underlying type will be
 `*pipeline.PluginConfig`, which is just an alias for `map[string]interface{}`,
@@ -94,11 +95,11 @@ providing the config data as simple key/value pairs. There is also a way for
 plugins to specify a custom struct to be used instead of the generic
 `PluginConfig` type (see :ref:`custom_plugin_config`). In either event, the
 plugin instances can use the config file values that have been loaded into the
-provided `config` object to perform any required initialization.
+provided `config` object to perform required initialization.
 
-As an example, imagine you were writing a plugin that would only effect
+As an example, imagine you were writing a plugin that would only affect
 messages that were from a specific set of hosts. The hosts could be specified
-in the config as a JSON array of hostnames. and your plugin definition and
+in the config as a JSON array of hostnames, and your plugin definition and
 `Init` method might look like this::
 
     type MyPlugin struct {
@@ -116,7 +117,7 @@ in the config as a JSON array of hostnames. and your plugin definition and
             if !ok {
                     return errors.New("MyPlugin: 'hosts' setting not a sequence.")
             }
-            self.hosts = make([]string, 0, 10)
+            self.hosts = make([]string, 0, len(hostsSeq))
             for _, host := range(hostsSeq) {
                     if hostStr, ok := host.(string); ok {
                             self.hosts = append(self.hosts, hostStr)
@@ -130,7 +131,7 @@ in the config as a JSON array of hostnames. and your plugin definition and
 If your plugin is going to require a global object shared among all of the
 plugin instances in the pool then instead of `Plugin` you should provide the
 closely related `PluginWithGlobal` interface, also defined in
-`pipeline_runner.go <https://github.com /mozilla-
+`pipeline_runner.go <https://github.com/mozilla-
 services/heka/blob/dev/pipeline/pipeline_runner.go>`_.::
 
     type PluginWithGlobal interface {
@@ -143,26 +144,36 @@ file, it will first create an instance of the plugin and then call `InitOnce`,
 passing in the loaded config data. `InitOnce` should perform any one-time-only
 initialization (opening an outgoing network connection, for example) and then
 create and return a custom `PluginGlobal` object containing any resources that
-will need to be shared among the plugin pool. Then it will create the pool of
-plugin instances, calling `Init` and passing in both the PluginGlobal *and*
-the config object.
+will need to be shared among the plugin pool. The global objects can be of
+any type that support the `PluginGlobal` interface::
 
-To further demonstrate consider an output plugin that will send data out over
-a UDP connection. The initialization code might look like so::
-
-    type UdpOutput struct {
-            global *UdpOutputGlobal
+    type PluginGlobal interface {
+            // Called when an event occurs, either RELOAD or STOP
+            Event(eventType string)
     }
 
+After the `PluginGlobal` is returned from `InitOnce`, Heka will create the
+pool of `PluginWithGlobal` instances, calling `Init` on each one and passing
+in both the PluginGlobal *and* the config object.
+
+Consider an output plugin that will send data out over a UDP connection. The
+initialization code might look like so::
+
+    // This will be our pipeline.PluginGlobal type
     type UdpOutputGlobal struct {
             conn net.Conn
     }
 
-    // provides pipeline.PluginGlobal interface
+    // Provides pipeline.PluginGlobal interface
     func (self *UdpOutputGlobal) Event(eventType string) {
             if eventType == pipeline.STOP {
                     self.conn.Close()
             }
+    }
+
+    // This will be our PluginWithGlobal type
+    type UdpOutput struct {
+            global *UdpOutputGlobal
     }
 
     // Initialize UDP connection, store it on the PluginGlobal
@@ -207,9 +218,9 @@ quickly becomes unwieldy. Heka supports a rudimentary plugin configuration
 schema system by making use of the Go language's automatic parsing of JSON
 values into suitable struct objects.
 
-Plugins that wish to provide a custom configuration struct that will be
-populated from the config file JSON should implement the `HasConfigStruct`
-interface defined in the `config.go <https://github.com /mozilla-
+Plugins that wish to provide a custom configuration struct to be populated
+from the config file JSON should implement the `HasConfigStruct` interface
+defined in the `config.go <https://github.com/mozilla-
 services/heka/blob/dev/pipeline/config.go>`_ file::
 
     type HasConfigStruct interface {
@@ -220,40 +231,44 @@ Your code should define a struct that can hold the required config values, and
 you should then implement a `ConfigStruct` method on your plugin which will
 initialize one of these and return it. Heka's config loader will then use this
 object as the value to be populated when Go's `json.Unmarshal` is called with
-the JSON from the config file. Note that this also gives you a mechanism for
-specifying default config values, by populating your config struct as desired
-before returning it from the `ConfigStruct` method.
+the corresponding JSON from the config file. Note that this also gives you a
+mechanism for specifying default config values, by populating your config
+struct as desired before returning it from the `ConfigStruct` method.
 
 Revisiting our example above, let's say we wanted to have our `UdpOutput`
 plugin default to sending data to my.example.com, port 44444. The
 initialization code might look as follows::
 
-    type UdpOutput struct {
-            global *UdpOutputGlobal
-    }
-
+    // This will be our pipeline.PluginGlobal type
     type UdpOutputGlobal struct {
             conn net.Conn
     }
 
-    // provides pipeline.PluginGlobal interface
+    // Provides pipeline.PluginGlobal interface
     func (self *UdpOutputGlobal) Event(eventType string) {
             if eventType == pipeline.STOP {
                     self.conn.Close()
             }
     }
 
+    // This will be our PluginWithGlobal type
+    type UdpOutput struct {
+            global *UdpOutputGlobal
+    }
+
+    // This is our plugin's custom config struct
     type UdpOutputConfig struct {
             Address string
     }
 
-    // provides pipeline.HasConfigStruct interface
+    // Provides pipeline.HasConfigStruct interface, populates default value
     func (self *UdpOutput) ConfigStruct() interface{} {
             return &UdpOutputConfig{"my.example.com:44444"}
     }
 
+    // Initialize UDP connection, store it on the PluginGlobal
     func (self *UdpOutput) InitOnce(config interface{}) (pipeline.PluginGlobal, error) {
-            conf := config.(*UdpOutputConfig)
+            conf := config.(*UdpOutputConfig) // assert we have the right config struct type
             udpAddr, err := net.ResolveUdpAddr("udp", conf.Address)
             if err != nil {
                     return nil, fmt.Errorf("UdpOutput error resolving UDP address %s: %s",
@@ -267,6 +282,7 @@ initialization code might look as follows::
             return &UdpOutputGlobal{udpConn}, nil
     }    
 
+    // Store a reference to the global for use during pipeline processing
     func (self *UdpOutput) Init(global pipeline.PluginGlobal, config interface{}) error {
             self.global = global // UDP connection available as self.global.conn
             return nil
@@ -288,7 +304,7 @@ process. The input plugin interface is very simple::
     }
 
 As you can see, there is only a single `Read` method that accepts a pointer to
-a `PipelinePack` (into which the message data should be written) and pointer
+a `PipelinePack` (into which the message data should be written) and a pointer
 to a `time.Duration` (which specifies how much time the read operation should
 allow to pass before a timeout is considered to have occurred). The only
 return value is an error (or `nil` if the read succeeds).
@@ -296,8 +312,8 @@ return value is an error (or `nil` if the read succeeds).
 Note that it is very important that your input plugin honors the specified
 read timeout value by returning an appropriate error if the duration elapses
 before the input can get the requested data. Heka creates a fixed number of
-pipeline goroutines, and if your input's `Read` method does not return, then
-it will be consuming a goroutine and removing it from the pool.
+pipeline goroutines, and if your input's `Read` method never returns, then it
+will be tying up one of these goroutines, effectively removing it from the pool.
 
 An input plugin that reads successfully can either output raw message bytes or
 a fully decoded `Message` struct object. In the former case, the message bytes
