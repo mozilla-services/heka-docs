@@ -15,38 +15,42 @@ A simple example configuration file:
     {
         "inputs": [
             {
+                "name": "udp:29330",
                 "type": "UdpInput",
                 "address": "127.0.0.1:29330"
             }
         ],
         "decoders": [
-            {"type": "JsonDecoder", "default": true}
-        ],
-        "filters": [
-            {"type": "LogFilter"}
+            {"name": "json", type": "JsonDecoder", "default": true}
         ],
         "outputs": [
             {
+                "name": "default_log",
                 "type": "FileOutput",
-                "path": "/var/log/hekad.log"
+                "path": "/var/log/hekad.log",
+                "prefix_ts": true
+            },
+            {
+                "name": "json_log",
+                "type": "FileOutput",
+                "path": "/var/log/hekad.json-log",
+                "format": "json"
             }
         ],
         "chains": {
             "default": {
-                "filters": ["LogFilter"]
-                "outputs": ["FileOutput"]
+                "outputs": ["default_log"]
             },
-            "sample": {
-                "message_type": ["Counter", "Timer", "Gauge"],
-                "filters": ["StatRollupFilter"],
-                "outputs": ["CounterOutput"]
+            "json": {
+                "message_type": ["SomeMessageType"],
+                "outputs": ["json_log"]
             }
         }
     }
 
-This rather contrived example will accept UDP input on the specified
-address, decode messages that arrive serialized as JSON, log the
-message to stdout, and then save the message to the specified file.
+This rather contrived example will accept UDP input on the specified address,
+decode messages that arrive serialized as JSON, and then write the message to
+either a text or a JSON log file, depending on the message type.
 
 Inputs, decoders, filters, and outputs are all hekad plug-ins and have
 some configuration keys in common. Individual plug-ins may have
