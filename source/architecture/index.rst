@@ -121,6 +121,20 @@ designated outputs the message will be sent to (or none of them). If no
 filters are configured for a message type (or they don't alter the
 output list), its sent to each of the configured outputs.
 
+hekad TCP Transport
+-----
+The transport is based on a push messaging pattern where the logging 
+client will open a connection to the hekad server and begin streaming its 
+log data in real time. The client logs are not persistent so currently 
+there is no capability in the transport to request or consume past data.
+In the transport stream each message will be preceeded by header 
+containing metadata about the message such as its length, encoding, etc. 
+The header also serves as a message separator and will aid with
+recovery in the event of stream corruption. 
+
+.. graphviz:: header.dot
+
+
 hekad
 -----
 
