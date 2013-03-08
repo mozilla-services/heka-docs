@@ -12,45 +12,48 @@ A simple example configuration file:
 
 .. code-block:: javascript
 
-    {
-        "inputs": [
-            {
-                "name": "udp:29330",
-                "type": "UdpInput",
-                "address": "127.0.0.1:29330"
-            }
-        ],
-        "decoders": [
-            {"name": "json", type": "JsonDecoder", "default": true}
-        ],
-        "outputs": [
-            {
-                "name": "default_log",
-                "type": "FileOutput",
-                "path": "/var/log/hekad.log",
-                "prefix_ts": true
-            },
-            {
-                "name": "json_log",
-                "type": "FileOutput",
-                "path": "/var/log/hekad.json-log",
-                "format": "json"
-            }
-        ],
-        "chains": {
-            "default": {
-                "outputs": ["default_log"]
-            },
-            "json": {
-                "message_type": ["SomeMessageType"],
-                "outputs": ["json_log"]
-            }
-        }
-    }
+   {
+       "inputs": [
+                 {"name": "tcp:5565",
+                     "type": "TcpInput",
+                     "address": "127.0.0.1:5565"
+                 }
+                 ],
+       "decoders": [
+                   {"type": "JsonDecoder", "encoding_name": "JSON"},
+                   {"type": "ProtobufDecoder", "encoding_name": "PROTOCOL_BUFFER"} 
 
-This rather contrived example will accept UDP input on the specified address,
-decode messages that arrive serialized as JSON, and then write the message to
-either a text or a JSON log file, depending on the message type.
+                   ],
+       "outputs": [
+                  {"name": "debug", "type": "LogOutput"}
+                  ],
+       "filters": {
+           "counter" :
+           {
+               "type": "CounterFilter",
+               "message_matcher": "Type == 'hekabench' && EnvVersion == '0.8'",
+               "output_timer" : 1,
+               "outputs" : ["debug"]
+           },
+           "lua_sandbox" :
+           {
+               "type": "SandboxFilter",
+               "message_matcher": "Type == 'hekabench' && EnvVersion == '0.8'",
+               "output_timer" : 1,
+               "outputs" : ["debug"],
+               "sandbox": {
+                   "type" : "lua",
+                   "filename" : "lua/sandbox.lua",
+                   "memory_limit" : 32767,
+                   "instruction_limit" : 1000
+               }
+           }
+       }
+   }
+
+This example will accept TCP input on the specified address, decode messages 
+that arrive serialized as JSON or Protobuf, pass the message to all filters 
+that match the message, and then write the filter output to the debug log.
 
 Inputs, decoders, filters, and outputs are all hekad plug-ins and have
 some configuration keys in common. Individual plug-ins may have
@@ -62,7 +65,7 @@ created when `hekad` starts up.
 Common Roles
 ============
 
-- **Agent** - Single default chain that passes all messages directly to
+- **Agent** - Single default filter that passes all messages directly to
   another `hekad` daemon on a separate machine configured as an
   Router.
 - **Aggregator** - Runs filters that can roll-up statistics (similar to
@@ -79,8 +82,7 @@ Command Line Options
 --config
 --------
 
-Specifies a configuration file to load. Defaults to `agent.conf` in the
-current directory.
+Specifies a configuration file to load. Defaults to `/etc/hekad.json`.
 
 --maxprocs
 ----------
@@ -106,10 +108,6 @@ several keys to configure the various hekad plug-ins:
 - decoders
 - filters
 - outputs
-- chains
-
-Individual sections of the configuration file will need to reference
-other sections, as the `chains` section does.
 
 Inputs, decoders, filters, and output plug-ins must each be specified
 by `type` and may optionally supply a `name` to be used for referring
@@ -152,69 +150,72 @@ Example:
 
 Listens on a specific UDP address and port for messages.
 
-Decoders
-========
+TcpInput
+--------
 
-One of the decoders specified must include the key/value of:
+Parameters:
+
+    - Address (string): An IP address:port.
+
+Example:
 
 .. code-block:: javascript
 
-    "default": true
+    {
+        "name": "tcp:5565",
+        "type": "TcpInput",
+        "address": "127.0.0.1:5565"
+    }
 
-so that unknown messages are passed through a default decoder if a
-decoder cannot be determined.
+Listens on a specific TCP address and port for messages.
 
-JsonDecoder
------------
+Decoders
+========
 
-Parameters: **None**
+A decoder should be specified for each encoding type defined in message.pb.go
 
-Decodes binary messages that were JSON serialized into a hekad message.
-Metlog clients frequently encode their messages as JSON.
+.. code-block:: javascript
+
+      {"type": "JsonDecoder", "encoding_name": "JSON"},
+      {"type": "ProtobufDecoder", "encoding_name": "PROTOCOL_BUFFER"} 
 
 
-MsgPackDecoder
---------------
+The JSON decoder converts JSON serialized Metlog client messages to hekad 
+messages.  The PROTOCOL_BUFFER decoder converts protobuf serialized messages 
+into hekad. The hekad message schema in defined in message.proto.
 
-Parameters: **None**
-
-Decodes binary messsages that were msgpack encoded into a hekad
-message.
-
-.. seealso:: `Msgpack website <http://msgpack.org/>`_
+.. seealso:: `Protocol Buffers - Google's data interchange format <http://code.google.com/p/protobuf/>`_
 
 Filters
 =======
 
-StatRollupFilter
+Common Parameters:
+    - message_matcher (string): Boolean expression, when evaluated to true passes the message to the filter for processing
+    - output_timer (uint):  Frequency in seconds that a timer event will be sent to the filter
+    - outputs ([]string): List of output destinations for the data produced (referenced by name from the 'outputs' section)
+
+
+CounterFilter
 ----------------
+Parameters: **None**
 
-Prerequisites:
+Once a second the count of every message that was matched is output and  every
+ten seconds an aggregate count with an average per second is output.
 
-    - MessageGeneratorInput must be configured.
-    - Message must be of type `counter`, `gauge`, or `timer`.
-
+SandboxFilter
+-------------
 Parameters:
 
-    - FlushInterval (int): How often the stats should be rolled up and
-      flushed. Defaults to ``10``.
-    - PercentThreshold (int): Threshold value for timer outliers to
-      ignore. Defaults to ``90``.
+    - sandbox (object): Sandbox specific configuration
+           - type (string): Sandbox virtual machine, currently only "lua" is supported
+           - filename (string): Path to the Lua script
+           - memory_limit (uint): Maximum number of bytes the sandbox is allowed to consume before being terminated
+           - instruction_limit (uint): Maximum number of Lua instructions the sandbox is allowed to consume (per function call) before being terminated
 
-A rollup occurs every `FlushInterval` seconds, which then causes
-MessageGeneratorInput to emit a new message of type `statmetric`.
+Outputs whatever data is produced by the sandbox to the specified destinations.
 
 Outputs
 =======
-
-CounterOutput
--------------
-
-Parameters: **None**
-
-Prints to stdout a count every second of how many messages were seen.
-Every 10 seconds an aggregate count with an average per second is
-printed to stdout.
 
 FileOutput
 ----------
@@ -238,49 +239,72 @@ Parameters: **None**
 
 Logs the message to stdout.
 
-Chains
-======
+Message Matcher Syntax
+======================
+Examples
+--------
+    - Type == "test" && Severity == 6
+    - (Severity == 7 || Payload == "Test Payload") && Type == "test"
+    - Fields[foo] != "bar"
+    - Fields[foo][1][0] == 'alternate'
+    - Fields[MyBool] == TRUE
+    - TRUE
 
-A chain describes the set of filters and outputs to apply to a specific
-message. A default chain must be declared which will be used if no
-other chain matches the message.
 
-The message will be passed to every filter and output named in the
-configuration. Some filters may alter the remaining output list used or
-consume a message entirely which will prevent later filters and outputs
-from seeing it.
+Relational Operators
+--------------------
+    - **==** equals
+    - **!=** not equals
+    - **>** greater than
+    - **>=** greater than equals
+    - **<** less than
+    - **<=** less than equals
+    - **=~** regular expression match
+    - **!~** regular expression negated match
 
-.. note::
+Logical Operators
+-----------------
+    - Parentheses are used for grouping expressions
+    - **&&** and (higher precedence)
+    - **||** or
 
-    At the moment chains can only match a message based on the message
-    type.
 
-Example
+Boolean
 -------
+    - **TRUE**
+    - **FALSE**
 
-.. code-block:: javascript
+Message Variables
+-----------------
+    - All message variables must be on the left hand side of the relational comparison
+    - String
+        - **Uuid**
+        - **Type**
+        - **Logger**
+        - **Payload**
+        - **EnvVersion**
+        - **Hostname**
+    - Numeric
+        - **Timestamp**
+        - **Severity**
+        - **Pid**
+    - Fields
+        - **Fields[_field_name_]** (shorthand for Field[_field_name_][0][0])
+        - **Fields[_field_name_][_field_index_]** (shorthand for Field[_field_name_][_field_index_][0])
+        - **Fields[_field_name_][_field_index_][_array_index]**
+        - If a field type is mis-match for the relational comparison, false will be returned i.e. Fields[foo] == 6 where 'foo' is a string
 
-    "chains": {
-        "stats": {
-            "message_type": ["Counter", "Timer", "Gauge"],
-            "filters": ["StatRollupFilter"]
-        },
-        "stat_dump": {
-            "message_type": ["StatMetric"],
-            "outputs": ["GraphiteOutput"]
-        },
-        "default": {
-            "outputs": ["LogFileOutput"]
-        }
-    }
 
-The chain named ``default`` will be used in the event a message does
-not match ``StatMetric``, ``Counter``, ``Timer``, or ``Gauge``. Each
-chain may contain two keyed sections: ``filters`` and / or ``outputs``.
-They must be lists that indicate the configured plugin to use, and
-refer to it either by the plugins configured `name` or if the `name`
-for the plugin is omitted, its full `plugin type` (As the above example
-refers to them).
+Quoted String
+-------------
+    - single or double quoted strings are allowed
+    - must be placed on the right side of a relational comparison i.e. Type == 'test'
 
-The chain must include the key ``message_type`` to differentiate what
-message types will trigger it unless its the `default` chain.
+Regular Expression String
+-------------------------
+    - enclosed by forward slashes
+    - must be placed on the right side of the relational comparison i.e. Type =~ /test/
+
+
+.. seealso:: `Regular Expression re2 syntax <http://code.google.com/p/re2/wiki/Syntax>`_
+
