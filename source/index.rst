@@ -1,47 +1,51 @@
-==================================================
-Heka - Collect, aggregate, and visualize your data
-==================================================
+====
+Heka
+====
 
-***IMPORTANT NOTE:*** **Heka is very new technology, and is not yet released,
-nor is it in production use anywhere, not even by the authors. Developers and
-interested parties are welcome to poke around and get involved, but it is
-neither recommended nor supported for you to be running `hekad` in production
-at this time.**
+.. centered:: *Data Acquisition and Collection MadeEasy*
 
-**Heka** is a tool that will **collect data from applications, databases and
-servers** then aggregate them to a few systems **for monitoring, alerting, and
-analytics**.
+**Heka** simplifies the collection, analysis, and transportation of data
+across your cluster/server. Counting downloads, keeping track of downloads
+from Apache logfiles, reporting security issues is handled in a single
+unified program thats easy to install locally for development and on servers
+for deployment.
 
-It's made for acquiring data from many sources including:
+Features
+========
 
-- Python/Node application performance metrics
+**Multiple Data Sources**
+    Data can be sent directly in via client libraries or using plug-ins that
+    can read logfiles, handle statsd UDP input, or other custom data sources.
+
+**Unified Daemon**
+    Heka is capable of routing messages like logstash_, aggregating counters
+    and submitting them to other sources like statsd_, and transporting log
+    messages from various nodes like syslog.
+
+**Plugin Architecture**
+    In case existing plug-ins are insufficient, additional plug-ins may be
+    written in Go or Lua (to run in the embedded Lua sandbox). Plug-ins can
+    be utilized for input, decoding unstructured data, filtering, or as
+    outputs.
+
+**Performance**
+    Written in Go_, heka utilizes light-weight goroutines for fast, efficient
+    message routing, and parallel plug-in operation that can utilize multi-core
+    systems to move hundreds of thousands of messages per second while using
+    a very modest amount of memory.
+
+**Usability**
+    A single static binary with a library module is all that's needed to run
+    heka locally, making it easy to develop with and deploy.
+
+Common Uses
+===========
+
+- Application performance metrics
 - Server load, memory consumption, and other machine metrics
 - Database, Cache server, and other daemon metrics
 - Various statsd counters
-- Log-files
-
-The data is collected per server node by an agent and then flushed at
-designated intervals to the aggregator which is responsible for routing them
-to the final destination such as:
-
-- Nagios
-- Graphite
-- Cassandra
-
-The data can be used to trigger alerts, analyzed in real-time by the
-aggregators, and fed into systems such as Cassandra for querying, long-term
-trends, monitoring, and alerting.
-
-Heka supports a plug-in system to allow for simple addition of new input,
-output, or processing functionality.
-
-Aspects of Heka overlap with features found in several open-source and
-commercial SaaS offerings such as:
-
-- Logstash
-- DataDogHQ
-- ServerDensity
-- New Relic
+- Log-file transportion and statsd counter generation
 
 Getting Started
 ===============
@@ -80,3 +84,7 @@ the Mozilla Services team. Contributions are welcome.
 Heka developers can be reached via the `services-dev
 <https://mail.mozilla.org/listinfo/services-dev>`_ mailing list or via IRC on
 the #heka channel of irc.mozilla.org.
+
+.. _Go: http://golang.org/
+.. _logstash: http://www.logstash.net/
+.. _statsd: https://github.com/etsy/statsd/
