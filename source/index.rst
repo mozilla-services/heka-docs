@@ -57,6 +57,13 @@ get started is to read the architecture documentation, which provides an
 overview of the Heka design as well as details on configuring and writing
 plugins for the `hekad` daemon.
 
+Support / Help
+==============
+
+Heka developers can be reached via the `services-dev
+<https://mail.mozilla.org/listinfo/services-dev>`_ mailing list or via IRC on
+the #heka channel of irc.mozilla.org.
+
 Contents:
 
 .. toctree::
@@ -65,25 +72,10 @@ Contents:
    architecture/index
    architecture/extending
    configuration/index
+   developing
 
-Source / Support
-================
 
-Heka is an actively developed open-source project being worked on by
-the Mozilla Services team. Contributions are welcome.
-
-* Heka project `github page <https://github.com/mozilla-services/heka>`_
-* Heka project
-  `issue tracker <https://github.com/mozilla-services/heka/issues>`_
-
-* Heka documentation project
-  `source code <https://github.com /mozilla-services/heka-docs>`_
-* Heka documentation project
-  `issue tracker <https://github.com/mozilla-services/heka-docs/issues>`_
-
-Heka developers can be reached via the `services-dev
-<https://mail.mozilla.org/listinfo/services-dev>`_ mailing list or via IRC on
-the #heka channel of irc.mozilla.org.
+* :ref:`glossary`
 
 .. _Go: http://golang.org/
 .. _logstash: http://www.logstash.net/
