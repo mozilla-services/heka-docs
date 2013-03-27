@@ -70,7 +70,6 @@ Contents:
    :maxdepth: 2
 
    architecture/index
-   architecture/extending
    configuration/index
    developing
 
