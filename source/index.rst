@@ -50,12 +50,14 @@ Common Uses
 Getting Started
 ===============
 
-Heka is under development and is not ready for production use. Heka's main
-component is `hekad`, a message processing and routing daemon that serves as
-both the agent and the aggregator, depending on configuration. A good place to
-get started is to read the architecture documentation, which provides an
-overview of the Heka design as well as details on configuring and writing
-plugins for the `hekad` daemon.
+Heka is under development and is not ready for production use. Heka's
+main component is `hekad`, a message processing and routing daemon that
+serves as both the agent and the aggregator, depending on
+configuration.
+
+
+
+.. _support:
 
 Support / Help
 ==============

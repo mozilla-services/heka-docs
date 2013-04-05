@@ -8,55 +8,55 @@ Architecture of Heka
 
 .. graphviz:: overview.dot
 
-Client Libraries (Metlog)
-=========================
+Client Libraries
+================
 
-Metlog (short for Metrics & Logging) is a group of client libraries
-available for multiple languages for reporting application specific
-logging and metrics data. It's capable of collecting:
+Client libraries for Heka are capable of collecting:
 
 - Logging output
 - Custom counters + timers
 - Exceptions
 
-The client libraries send data to an appropriate hekad **Input**.
+The client libraries send data to `hekad` for routing.
 
-metlog-py
----------
+.. _available_clients:
 
-Code: https://github.com/mozilla-services/metlog-py
+.. list-table:: Available Clients
+    :widths: 15 10 30 5 20 20
+    :header-rows: 1
 
-Status: **Production**
+    * - Client
+      - Language
+      - Features
+      - Status
+      - Code
+      - Docs
+    * - heka-py
+      - Python
+      - Metrics, Log Messages
+      - **Production**
+      - https://github.com/mozilla-services/heka-py
+      - https://heka-py.readthedocs.org/en/latest/
+    * - heka-cef
+      - Python
+      - CEF Messages for heka-py
+      - **Development**
+      - https://github.com/mozilla-services/heka-py-cef
+      -
+    * - heka-raven
+      - Python
+      - Exception Capturing
+      - **Development**
+      - https://github.com/mozilla-services/heka-py-raven
+      -
+    * - heka-node
+      - Javascript (Node)
+      - Metrics, Log Messages
+      - **Development**
+      - https://github.com/mozilla-services/heka-node
+      -
 
-Python library for Metlog.
-
-metlog-cef
-----------
-
-Code: https://github.com/mozilla-services/metlog-cef
-
-Status: **Development**
-
-metlog-py extension to support sending CEF messages.
-
-metlog-raven
-------------
-
-Code: https://github.com/mozilla-services/metlog-raven
-
-Status:: **Development**
-
-metlog-py extension to support capturing logging exceptions utilizing
-raven to capture frame information for reporting to Sentry.
-
-metlog-node
------------
-
-Code: https://github.com/mozilla-services/metlog-node
-
-Status: **Development**
-
-Node.js library for Metlog.
+Did you write a client for heka? :ref:`Let us know <support>`!
 
 Hekad Application
 =================
@@ -123,14 +123,14 @@ output list), its sent to each of the configured outputs.
 
 hekad TCP Transport
 -----
-The transport is based on a push messaging pattern where the logging 
-client will open a connection to the hekad server and begin streaming its 
-log data in real time. The client logs are not persistent so currently 
+The transport is based on a push messaging pattern where the logging
+client will open a connection to the hekad server and begin streaming its
+log data in real time. The client logs are not persistent so currently
 there is no capability in the transport to request or consume past data.
-In the transport stream each message will be preceeded by header 
-containing metadata about the message such as its length, encoding, etc. 
+In the transport stream each message will be preceeded by header
+containing metadata about the message such as its length, encoding, etc.
 The header also serves as a message separator and will aid with
-recovery in the event of stream corruption. 
+recovery in the event of stream corruption.
 
 .. graphviz:: header.dot
 
