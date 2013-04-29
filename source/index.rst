@@ -50,12 +50,11 @@ Common Uses
 Getting Started
 ===============
 
-Heka is under development and is not ready for production use. Heka's
-main component is `hekad`, a message processing and routing daemon that
-serves as both the agent and the aggregator, depending on
-configuration.
-
-
+1. Install `hekad <http://hekad.readthedocs.org/en/latest/>`_.
+2. Install one of the :ref:`client libraries <available clients>` or
+   use `hekad` directly as a message router for various types of messages
+   and/or reading logfiles.
+3. Read the `hekad documentation <http://hekad.readthedocs.org/en/latest/>`_.
 
 .. _support:
 

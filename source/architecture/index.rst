@@ -79,67 +79,13 @@ This model of message routing is inspired by the routing of messages in
 `logstash <http://logstash.net/>`_, although heka introduces an explicit
 decoding step and the idea of filter chains (see below).
 
-.. rubric:: Internal heka architecture
-
-.. graphviz:: hekaflow.dot
-
-Internally, all data sent into `hekad` becomes a message which is then
-sent through a configured series of filters called a *filter chain*.
-
-An **input** is responsible for acquiring data. It may listen on a port
-or multiple ports for network traffic, bind to ZeroMQ, or tail log
-files for data. Some inputs require a decoder to translate the raw data
-into a *message*.
-
-A **decoder** may be used if the result from an input is not a message.
-The decoder can then translate the data from the input into a message.
-Some inputs may skip the decoding process. Hekad uses an internal
-process that determines the appropriate decoder and can have a default
-decoder specified.
-
-A **message** may correspond to an event or line of data from a log file
-or a statsd style timer/gauge/counter. Messages are created either by a
-decoder or an input, and contain a set of basic fields as well as an
-arbitrary set of key/values.
-
-A **filter** may mark the outputs a message should be sent to, perform
-side effects (like logging), mutate the message, or destroy the message
-preventing other filters in the chain from being called. Filters are
-applied to a message type based their filter chain configuration.
-
-An **output** takes a message and usually commits it to a back-end
-service such as a database.
-
-A **filter chain** refers to a series of filters and outputs that will
-be used for a **message** of a specific type. Multiple chains can be
-configured to handle specific message types.
-
-When `hekad` has a message, a set of filters and outputs configured for
-the message type are loaded based on the configuration. The filters are
-then run in the order specified and can indicate which of the
-designated outputs the message will be sent to (or none of them). If no
-filters are configured for a message type (or they don't alter the
-output list), its sent to each of the configured outputs.
-
-hekad TCP Transport
------
-The transport is based on a push messaging pattern where the logging
-client will open a connection to the hekad server and begin streaming its
-log data in real time. The client logs are not persistent so currently
-there is no capability in the transport to request or consume past data.
-In the transport stream each message will be preceeded by header
-containing metadata about the message such as its length, encoding, etc.
-The header also serves as a message separator and will aid with
-recovery in the event of stream corruption.
-
-.. graphviz:: header.dot
-
-
 hekad
 -----
 
+Docs: https://hekad.readthedocs.org/en/latest/
+
 Code: https://github.com/mozilla-services/heka
 
-Status: **Development**
+Status: **Beta**
 
 Configurable daemon that can behave differently based on configuration.
