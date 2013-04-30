@@ -82,6 +82,8 @@ decoding step and the idea of filter chains (see below).
 hekad
 -----
 
+Binaries: https://docs.services.mozilla.com/_static/binaries/
+
 Docs: https://hekad.readthedocs.org/en/latest/
 
 Code: https://github.com/mozilla-services/heka
