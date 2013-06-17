@@ -79,6 +79,20 @@ This model of message routing is inspired by the routing of messages in
 `logstash <http://logstash.net/>`_, although heka introduces an explicit
 decoding step and the idea of filter chains (see below).
 
+Hekad Transport/Message Framing
+===============================
+The native transport for hekad is based on a push messaging pattern where the 
+logging client will open a connection to the hekad server and begin streaming 
+its log data in real time. The client logs are not persistent so currently
+there is no capability in the transport to request or consume past data.
+In the transport stream each message will be preceeded by header
+containing metadata about the message such as its length, encoding, etc.
+The header also serves as a message separator and will aid with
+recovery in the event of stream corruption. 
+See: `message.proto <https://github.com/mozilla-services/heka/blob/master/message/message.proto>`_
+
+.. graphviz:: header.dot 
+
 hekad
 -----
 
