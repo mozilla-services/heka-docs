@@ -61,8 +61,8 @@ Getting Started
 Support / Help
 ==============
 
-Heka developers can be reached via the `services-dev
-<https://mail.mozilla.org/listinfo/services-dev>`_ mailing list or via IRC on
+Heka developers can be reached via the `Heka
+<https://mail.mozilla.org/listinfo/heka>`_ mailing list or via IRC on
 the #heka channel of irc.mozilla.org.
 
 Contents:
